@@ -70,11 +70,26 @@ int main(void) {
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
 	GPIOPinTypeGPIOInput(GPIO_PORTF_BASE, GPIO_PIN_1);
 	GPIOPadConfigSet(GPIO_PORTF_BASE, GPIO_PIN_1, GPIO_STRENGTH_2MA,
-		GPIO_PIN_TYPE_STD_WPU);
+			GPIO_PIN_TYPE_STD_WPU);
 	// up button
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE);
-		GPIOPinTypeGPIOInput(GPIO_PORTE_BASE, GPIO_PIN_0);
-		GPIOPadConfigSet(GPIO_PORTE_BASE, GPIO_PIN_0, GPIO_STRENGTH_2MA,
+	GPIOPinTypeGPIOInput(GPIO_PORTE_BASE, GPIO_PIN_0);
+	GPIOPadConfigSet(GPIO_PORTE_BASE, GPIO_PIN_0, GPIO_STRENGTH_2MA,
+			GPIO_PIN_TYPE_STD_WPU);
+	//left button
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE);
+	GPIOPinTypeGPIOInput(GPIO_PORTE_BASE, GPIO_PIN_2);
+	GPIOPadConfigSet(GPIO_PORTE_BASE, GPIO_PIN_2, GPIO_STRENGTH_2MA,
+			GPIO_PIN_TYPE_STD_WPU);
+	//right button
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE);
+	GPIOPinTypeGPIOInput(GPIO_PORTE_BASE, GPIO_PIN_3);
+	GPIOPadConfigSet(GPIO_PORTE_BASE, GPIO_PIN_3, GPIO_STRENGTH_2MA,
+			GPIO_PIN_TYPE_STD_WPU);
+	//down button
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE);
+	GPIOPinTypeGPIOInput(GPIO_PORTE_BASE, GPIO_PIN_1);
+	GPIOPadConfigSet(GPIO_PORTE_BASE, GPIO_PIN_1, GPIO_STRENGTH_2MA,
 			GPIO_PIN_TYPE_STD_WPU);
 
 
@@ -91,8 +106,6 @@ int main(void) {
 		RIT128x96x4ImageDraw(g_pucFrame, 0, 0, FRAME_SIZE_X, FRAME_SIZE_Y);
 	}
 
-
-
 	return 0;
 }
 
@@ -101,7 +114,17 @@ void TimerISR(void) {
 	static int running = true;
 	unsigned long presses = g_ulButtons;
 	TIMER0_ICR_R = TIMER_ICR_TATOCINT; // clear interrupt flag
-	ButtonDebounce((~GPIO_PORTF_DATA_R & GPIO_PIN_1) >> 1);
+	ButtonDebounce(
+			//select button
+			(~GPIO_PORTF_DATA_R & GPIO_PIN_1) +
+			//up button
+			(~GPIO_PORTE_DATA_R & GPIO_PIN_0) +
+			//left button
+			(~GPIO_PORTE_DATA_R & GPIO_PIN_2) +
+			//right button
+			(~GPIO_PORTE_DATA_R & GPIO_PIN_3) +
+			//down button
+			((~GPIO_PORTE_DATA_R & GPIO_PIN_1) << 3));
 	presses = ~presses & g_ulButtons; // button press detector
 	if (presses & 1) { // "select" button pressed
 		running = !running;
