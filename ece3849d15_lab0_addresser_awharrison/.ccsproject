@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <?ccsproject version="1.0"?>
 <projectOptions>
-	<deviceVariant value="com.ti.ccstudio.deviceModel.TMS470.GenericARM11Device"/>
+	<deviceVariant value="Cortex M.LM3S8962"/>
 	<deviceFamily value="TMS470"/>
-	<deviceEndianness value="big"/>
+	<deviceEndianness value="little"/>
 	<codegenToolVersion value="5.0.4"/>
-	<isElfFormat value="false"/>
+	<isElfFormat value="true"/>
+	<connection value="common/targetdb/connections/Stellaris_ICDI_Connection.xml"/>
+	<linkerCommandFile value="lm3s8962.cmd"/>
 	<rts value="libc.a"/>
 	<templateProperties value="id=com.ti.common.project.core.emptyProjectWithMainTemplate,"/>
-	<connection value="common/targetdb/connections/Stellaris_ICDI_Connection.xml"/>
 	<isTargetManual value="false"/>
 </projectOptions>
