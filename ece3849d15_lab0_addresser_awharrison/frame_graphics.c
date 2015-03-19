@@ -178,6 +178,10 @@ void DrawCircle(int x0, int y0, int r, unsigned level)
 		CirclePlot(x0, y0, x, y, level);
 }
 
+void custDrawCircle(int x0, int y0, int r, unsigned level) {
+
+}
+
 void DrawFilledRectangle(int x1, int y1, int x2, int y2, unsigned level)
 {
 	unsigned long *p_fill;

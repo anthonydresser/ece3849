@@ -15,6 +15,7 @@
 #include "driverlib/interrupt.h"
 #include "driverlib/gpio.h"
 #include "buttons.h"
+#include <math.h>
 
 #define BUTTON_CLOCK 200 // button scanning interrupt rate in Hz
 
@@ -34,6 +35,9 @@ int main(void) {
 	unsigned int seconds;
 	unsigned int fractions;
 	unsigned long ulDivider, ulPrescaler;
+	int i = 0; // counter for the analog clock face
+	float dx, dy, sini, cosi;
+	int x, y;
 
 	// initialize the clock generator
 	if (REVISION_IS_A2)
@@ -102,6 +106,16 @@ int main(void) {
 		minutes = ulTime/6000;
 		usprintf(pcStr, "Time = %02d:%02d:%02d", minutes, seconds, fractions); // convert time to string
 		DrawString(0, 0, pcStr, 15, false); // draw string to frame buffer
+		DrawCircle(64, 52, 40, 4);
+		for(i = 0; i < 360; i += 6) {
+			sini = sin(i);
+			cosi = cos(i);
+			dx = 38.0*sini;
+			dy = 38.0*cosi;
+			x = 64 + dx;
+			y = 52 + dy;
+			DrawPoint(x, y, 8);
+		}
 		// copy frame to the OLED screen
 		RIT128x96x4ImageDraw(g_pucFrame, 0, 0, FRAME_SIZE_X, FRAME_SIZE_Y);
 	}
@@ -116,15 +130,15 @@ void TimerISR(void) {
 	TIMER0_ICR_R = TIMER_ICR_TATOCINT; // clear interrupt flag
 	ButtonDebounce(
 			//select button
-			(~GPIO_PORTF_DATA_R & GPIO_PIN_1) +
+			((~GPIO_PORTF_DATA_R & GPIO_PIN_1) >> 1) +
 			//up button
 			(~GPIO_PORTE_DATA_R & GPIO_PIN_0) +
 			//left button
-			(~GPIO_PORTE_DATA_R & GPIO_PIN_2) +
+			((~GPIO_PORTE_DATA_R & GPIO_PIN_2) >> 2) +
 			//right button
-			(~GPIO_PORTE_DATA_R & GPIO_PIN_3) +
+			((~GPIO_PORTE_DATA_R & GPIO_PIN_3) >> 3) +
 			//down button
-			((~GPIO_PORTE_DATA_R & GPIO_PIN_1) << 3));
+			((~GPIO_PORTE_DATA_R & GPIO_PIN_1) >> 1));
 	presses = ~presses & g_ulButtons; // button press detector
 	if (presses & 1) { // "select" button pressed
 		running = !running;

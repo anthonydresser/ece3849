@@ -16,6 +16,12 @@ main.obj: C:/StellarisWare/driverlib/interrupt.h
 main.obj: C:/StellarisWare/driverlib/gpio.h
 main.obj: C:/StellarisWare/driverlib/pin_map.h
 main.obj: ../buttons.h
+main.obj: C:/ti/ccsv5/tools/compiler/arm_5.0.4/include/math.h
+main.obj: C:/ti/ccsv5/tools/compiler/arm_5.0.4/include/ymath.h
+main.obj: C:/ti/ccsv5/tools/compiler/arm_5.0.4/include/yvals.h
+main.obj: C:/ti/ccsv5/tools/compiler/arm_5.0.4/include/stdarg.h
+main.obj: C:/ti/ccsv5/tools/compiler/arm_5.0.4/include/linkage.h
+main.obj: C:/ti/ccsv5/tools/compiler/arm_5.0.4/include/_lock.h
 
 ../main.c: 
 C:/StellarisWare/inc/hw_types.h: 
@@ -33,3 +39,9 @@ C:/StellarisWare/driverlib/interrupt.h:
 C:/StellarisWare/driverlib/gpio.h: 
 C:/StellarisWare/driverlib/pin_map.h: 
 ../buttons.h: 
+C:/ti/ccsv5/tools/compiler/arm_5.0.4/include/math.h: 
+C:/ti/ccsv5/tools/compiler/arm_5.0.4/include/ymath.h: 
+C:/ti/ccsv5/tools/compiler/arm_5.0.4/include/yvals.h: 
+C:/ti/ccsv5/tools/compiler/arm_5.0.4/include/stdarg.h: 
+C:/ti/ccsv5/tools/compiler/arm_5.0.4/include/linkage.h: 
+C:/ti/ccsv5/tools/compiler/arm_5.0.4/include/_lock.h: 
