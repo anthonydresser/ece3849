@@ -35,9 +35,19 @@ int main(void) {
 	unsigned int seconds;
 	unsigned int fractions;
 	unsigned long ulDivider, ulPrescaler;
-	int i = 0; // counter for the analog clock face
-	float dx, dy, sini, cosi;
-	int x, y;
+ 	int i; // counter for the analog clock face
+//	float dx, dy, sini, cosi;
+	int x[60] = {64, 68, 72, 76, 79, 83, 86, 89, 92, 95, 97, 99, 100,
+	         101, 102, 102, 102, 101, 100, 99, 97, 95, 92, 89, 86, 83,
+	         79, 76, 72, 68, 64, 60, 56, 52, 49, 45, 42, 39, 36, 33,
+	         31, 29, 28, 27, 26, 26, 26, 27, 28, 29, 31, 33, 36, 39,
+	         42, 45, 49, 52, 56, 60
+	};
+	int y[60] = {14, 14, 15, 16, 17, 19, 21, 24, 27, 30, 33, 37, 40, 44, 48,
+			52, 56, 60, 64, 67, 71, 74, 77, 80, 83, 85, 87, 88, 89, 90,
+			90, 90, 89, 88, 87, 85, 83, 80, 77, 74, 71, 67, 64, 60, 56, 52,
+			48, 44, 40, 37, 33, 30, 27, 24, 21, 19, 17, 16, 15, 14
+	};
 
 	// initialize the clock generator
 	if (REVISION_IS_A2)
@@ -106,16 +116,26 @@ int main(void) {
 		minutes = ulTime/6000;
 		usprintf(pcStr, "Time = %02d:%02d:%02d", minutes, seconds, fractions); // convert time to string
 		DrawString(0, 0, pcStr, 15, false); // draw string to frame buffer
-		DrawCircle(64, 52, 40, 4);
-		for(i = 0; i < 360; i += 6) {
-			sini = sin(i);
-			cosi = cos(i);
-			dx = 38.0*sini;
-			dy = 38.0*cosi;
-			x = 64 + dx;
-			y = 52 + dy;
-			DrawPoint(x, y, 8);
+		DrawCircle(64, 52, 40, 2);
+//		for(i = 0; i < 360; i += 6) {
+//			sini = sin(i);
+//			cosi = cos(i);
+//			dx = 38.0*sini;
+//			dy = 38.0*cosi;
+//			x = 64 + dx;
+//			y = 52 + dy;
+//			DrawPoint(x, y, 8);
+//		}
+		// draw the points on the circle
+		for(i = 0; i <= 60; i++) {
+			if((i % 5) == 0)
+				DrawPoint(x[i], y[i], 15);
+			else
+				DrawPoint(x[i], y[i], 6);
 		}
+		// draw hands
+		DrawLine(64, 52, x[seconds], y[seconds], 6);
+		DrawLine(64, 52, x[minutes], y[minutes], 10);
 		// copy frame to the OLED screen
 		RIT128x96x4ImageDraw(g_pucFrame, 0, 0, FRAME_SIZE_X, FRAME_SIZE_Y);
 	}
