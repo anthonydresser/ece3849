@@ -21,7 +21,7 @@
 
 // Global Variables
 unsigned long g_ulSystemClock; // system clock frequency in Hz
-volatile unsigned long g_ulTime = 0; // time in hundredths of a second
+volatile unsigned long g_ulTime = 35660; // time in hundredths of a second
 
 // Function Prototypes
 void TimerISR(void);
@@ -52,27 +52,44 @@ int main(void) {
 	// initialize the clock generator
 	if (REVISION_IS_A2)
 		SysCtlLDOSet(SYSCTL_LDO_2_75V);
+		// sets the output of LDO to 2.75V
 
 	SysCtlClockSet(SYSCTL_SYSDIV_4 | SYSCTL_USE_PLL | SYSCTL_OSC_MAIN |
 			SYSCTL_XTAL_8MHZ);
-	g_ulSystemClock = SysCtlClockGet();
+	// SYSCTL_SYSDIVE_4 divides the system clock source frequency by 4 to give = 50MHz
+	// system oscillator is main
+	// external frequency is PLL (phase-locked loop) using an 8MHz crystal
+
+	g_ulSystemClock = SysCtlClockGet(); // gets processor clock rate
+	// also the clock rate of the majority of peripheral modules
 
 	RIT128x96x4Init(3500000); // initialize the OLED display
+	// initializes SSI/SPI interface to OLED to 3.5MHz clock
 
 	// initialization code
 	// initialize a general purpose timer for periodic interrupts
-	SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0); // enables TIMER0
 	TimerDisable(TIMER0_BASE, TIMER_BOTH);
+	// TIMER0_BASE is the base address of the timer module
+	// TIMER_BOTH disables TIMER_A and TIMER_B
 	TimerConfigure(TIMER0_BASE, TIMER_CFG_SPLIT_PAIR | TIMER_CFG_A_PERIODIC);
+	// configures timer
+	// TIMER0_BASE is the base address of the timer module
+	// TIMER_CFG_SPLIT_PAIR -> two half-width timers, must configure timers separately
+	// TIMER_CFG_A_PERIODIC -> sets TIMER_A to a half-width timer
 
 	// prescaler for a 16-bit timer
 	ulPrescaler = (g_ulSystemClock / BUTTON_CLOCK - 1) >> 16;
+	// system frequency div by 199 right shifted 16 bits
 
 	// 16-bit divider (timer load value)
 	ulDivider = g_ulSystemClock / (BUTTON_CLOCK * (ulPrescaler + 1)) - 1;
 	TimerLoadSet(TIMER0_BASE, TIMER_A, ulDivider);
+	// if the timer is running, then the ulDivider is immediately loaded into the timer
 	TimerPrescaleSet(TIMER0_BASE, TIMER_A, ulPrescaler);
+	// ulPrescaler must be between 0 and 255 for 16/32-bit timers
 	TimerIntEnable(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
+	// enables interrupt when TIMER A times out aka every 10ms
 	TimerEnable(TIMER0_BASE, TIMER_A);
 
 	IntPrioritySet(INT_TIMER0A, 0); // 0 = highest priority, 32 = next lower
@@ -114,6 +131,7 @@ int main(void) {
 		fractions = ulTime % 100;
 		seconds = (ulTime/100) % 60;
 		minutes = ulTime/6000;
+
 		usprintf(pcStr, "Time = %02d:%02d:%02d", minutes, seconds, fractions); // convert time to string
 		DrawString(0, 0, pcStr, 15, false); // draw string to frame buffer
 		DrawCircle(64, 52, 40, 2);
@@ -170,6 +188,8 @@ void TimerISR(void) {
 		}
 		else
 			tic = true;
+		if (g_ulTime == 36000)
+			g_ulTime = 0;
 	}
 }
 
