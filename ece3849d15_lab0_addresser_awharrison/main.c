@@ -182,6 +182,7 @@ void TimerISR(void) {
 		running = !running;
 	}
 	if (presses & 2) {
+        running = !running;
 		g_ulTime = 0;
 	}
 	if (running) {
