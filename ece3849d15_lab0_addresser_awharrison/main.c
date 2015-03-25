@@ -21,7 +21,7 @@
 
 // Global Variables
 unsigned long g_ulSystemClock; // system clock frequency in Hz
-volatile unsigned long g_ulTime = 35660; // time in hundredths of a second
+volatile unsigned long g_ulTime = 0; // time in hundredths of a second
 
 // Function Prototypes
 void TimerISR(void);
@@ -175,11 +175,14 @@ void TimerISR(void) {
 			((~GPIO_PORTE_DATA_R & GPIO_PIN_2) >> 2) +
 			//right button
 			((~GPIO_PORTE_DATA_R & GPIO_PIN_3) >> 3) +
-			//down button
-			((~GPIO_PORTE_DATA_R & GPIO_PIN_1) >> 1));
+			//down button // not shifted because it will be the reset button
+			((~GPIO_PORTE_DATA_R & GPIO_PIN_1)));
 	presses = ~presses & g_ulButtons; // button press detector
 	if (presses & 1) { // "select" button pressed
 		running = !running;
+	}
+	if (presses & 2) {
+		g_ulTime = 0;
 	}
 	if (running) {
 		if (tic) {
@@ -188,8 +191,8 @@ void TimerISR(void) {
 		}
 		else
 			tic = true;
-		if (g_ulTime == 36000)
-			g_ulTime = 0;
+//		if (g_ulTime == 360000)
+//			g_ulTime = 0;
 	}
 }
 
