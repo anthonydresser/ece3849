@@ -35,13 +35,13 @@ int main(void) {
 	unsigned int seconds;
 	unsigned int fractions;
 	unsigned long ulDivider, ulPrescaler;
- 	int i; // counter for the analog clock face
-//	float dx, dy, sini, cosi;
+	int i; // counter for the analog clock face
+	//	float dx, dy, sini, cosi;
 	int x[60] = {64, 68, 72, 76, 79, 83, 86, 89, 92, 95, 97, 99, 100,
-	         101, 102, 102, 102, 101, 100, 99, 97, 95, 92, 89, 86, 83,
-	         79, 76, 72, 68, 64, 60, 56, 52, 49, 45, 42, 39, 36, 33,
-	         31, 29, 28, 27, 26, 26, 26, 27, 28, 29, 31, 33, 36, 39,
-	         42, 45, 49, 52, 56, 60
+			101, 102, 102, 102, 101, 100, 99, 97, 95, 92, 89, 86, 83,
+			79, 76, 72, 68, 64, 60, 56, 52, 49, 45, 42, 39, 36, 33,
+			31, 29, 28, 27, 26, 26, 26, 27, 28, 29, 31, 33, 36, 39,
+			42, 45, 49, 52, 56, 60
 	};
 	int y[60] = {14, 14, 15, 16, 17, 19, 21, 24, 27, 30, 33, 37, 40, 44, 48,
 			52, 56, 60, 64, 67, 71, 74, 77, 80, 83, 85, 87, 88, 89, 90,
@@ -52,7 +52,7 @@ int main(void) {
 	// initialize the clock generator
 	if (REVISION_IS_A2)
 		SysCtlLDOSet(SYSCTL_LDO_2_75V);
-		// sets the output of LDO to 2.75V
+	// sets the output of LDO to 2.75V
 
 	SysCtlClockSet(SYSCTL_SYSDIV_4 | SYSCTL_USE_PLL | SYSCTL_OSC_MAIN |
 			SYSCTL_XTAL_8MHZ);
@@ -135,15 +135,15 @@ int main(void) {
 		usprintf(pcStr, "Time = %02d:%02d:%02d", minutes, seconds, fractions); // convert time to string
 		DrawString(0, 0, pcStr, 15, false); // draw string to frame buffer
 		DrawCircle(64, 52, 40, 2);
-//		for(i = 0; i < 360; i += 6) {
-//			sini = sin(i);
-//			cosi = cos(i);
-//			dx = 38.0*sini;
-//			dy = 38.0*cosi;
-//			x = 64 + dx;
-//			y = 52 + dy;
-//			DrawPoint(x, y, 8);
-//		}
+		//		for(i = 0; i < 360; i += 6) {
+		//			sini = sin(i);
+		//			cosi = cos(i);
+		//			dx = 38.0*sini;
+		//			dy = 38.0*cosi;
+		//			x = 64 + dx;
+		//			y = 52 + dy;
+		//			DrawPoint(x, y, 8);
+		//		}
 		// draw the points on the circle
 		for(i = 0; i <= 60; i++) {
 			if((i % 5) == 0)
@@ -167,22 +167,34 @@ void TimerISR(void) {
 	unsigned long presses = g_ulButtons;
 	TIMER0_ICR_R = TIMER_ICR_TATOCINT; // clear interrupt flag
 	ButtonDebounce(
-			//select button
-			((~GPIO_PORTF_DATA_R & GPIO_PIN_1) >> 1) +
-			//up button
-			(~GPIO_PORTE_DATA_R & GPIO_PIN_0) +
-			//left button
-			((~GPIO_PORTE_DATA_R & GPIO_PIN_2) >> 2) +
-			//right button
-			((~GPIO_PORTE_DATA_R & GPIO_PIN_3) >> 3) +
-			//down button // not shifted because it will be the reset button
-			((~GPIO_PORTE_DATA_R & GPIO_PIN_1)));
+			//reset
+			(
+					//up button
+					((~GPIO_PORTE_DATA_R & GPIO_PIN_0) << 1) +
+					//left button
+					((~GPIO_PORTE_DATA_R & GPIO_PIN_2) >> 1) +
+					//right button
+					((~GPIO_PORTE_DATA_R & GPIO_PIN_3) >> 2) +
+					//down button
+					((~GPIO_PORTE_DATA_R & GPIO_PIN_1))
+			) +
+			//start/stop
+			((~GPIO_PORTF_DATA_R & GPIO_PIN_1) >> 1));
+	//select button
+	//			((~GPIO_PORTF_DATA_R & GPIO_PIN_1) >> 1) +
+	//			//up button
+	//			(~GPIO_PORTE_DATA_R & GPIO_PIN_0 << 1) +
+	//			//left button
+	//			((~GPIO_PORTE_DATA_R & GPIO_PIN_2) >> 1) +
+	//			//right button
+	//			((~GPIO_PORTE_DATA_R & GPIO_PIN_3) >> 2) +
+	//			//down button // not shifted because it will be the reset button
+	//			((~GPIO_PORTE_DATA_R & GPIO_PIN_1)));
 	presses = ~presses & g_ulButtons; // button press detector
 	if (presses & 1) { // "select" button pressed
 		running = !running;
 	}
 	if (presses & 2) {
-        running = !running;
 		g_ulTime = 0;
 	}
 	if (running) {
@@ -192,8 +204,8 @@ void TimerISR(void) {
 		}
 		else
 			tic = true;
-//		if (g_ulTime == 360000)
-//			g_ulTime = 0;
+		//		if (g_ulTime == 360000)
+		//			g_ulTime = 0;
 	}
 }
 
