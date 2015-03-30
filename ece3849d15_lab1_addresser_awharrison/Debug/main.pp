@@ -16,6 +16,7 @@ main.obj: C:/StellarisWare/driverlib/interrupt.h
 main.obj: C:/StellarisWare/driverlib/gpio.h
 main.obj: C:/StellarisWare/driverlib/pin_map.h
 main.obj: ../buttons.h
+main.obj: C:/StellarisWare/driverlib/adc.h
 main.obj: C:/ti/ccsv5/tools/compiler/arm_5.0.4/include/math.h
 main.obj: C:/ti/ccsv5/tools/compiler/arm_5.0.4/include/ymath.h
 main.obj: C:/ti/ccsv5/tools/compiler/arm_5.0.4/include/yvals.h
@@ -39,6 +40,7 @@ C:/StellarisWare/driverlib/interrupt.h:
 C:/StellarisWare/driverlib/gpio.h: 
 C:/StellarisWare/driverlib/pin_map.h: 
 ../buttons.h: 
+C:/StellarisWare/driverlib/adc.h: 
 C:/ti/ccsv5/tools/compiler/arm_5.0.4/include/math.h: 
 C:/ti/ccsv5/tools/compiler/arm_5.0.4/include/ymath.h: 
 C:/ti/ccsv5/tools/compiler/arm_5.0.4/include/yvals.h: 

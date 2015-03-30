@@ -15,6 +15,7 @@
 #include "driverlib/interrupt.h"
 #include "driverlib/gpio.h"
 #include "buttons.h"
+#include "driverlib/adc.h"
 #include <math.h>
 
 #define BUTTON_CLOCK 200 // button scanning interrupt rate in Hz
@@ -123,6 +124,16 @@ int main(void) {
 	GPIOPadConfigSet(GPIO_PORTE_BASE, GPIO_PIN_1, GPIO_STRENGTH_2MA,
 			GPIO_PIN_TYPE_STD_WPU);
 
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC0); // enable the ADC
+	SysCtlADCSpeedSet(SYSCTL_ADCSPEED_500KSPS); // specify 500ksps
+	ADCSequenceDisable(ADC0_BASE, 0); // choose ADC sequence 0; disable before configuring
+	ADCSequenceConfigure(ADC0_BASE, 0, ADC_TRIGGER_ALWAYS, 0); // specify the "Always" trigger
+	ADCSequenceStepConfigure(ADC0_BASE, 0, 0, ADC_CTL_CH0 | ADC_CTL_IE | ADC_CTL_END); // in the 0th step, sample channel 0
+	 // enable interrupt, and make it the end of sequence
+	ADCIntEnable(ADC0_BASE, 0); // enable ADC interrupt from sequence 0
+	ADCSequenceEnable(ADC0_BASE, 0); // enable the sequence. it is now sampling
+	IntPrioritySet(INT_ADC0, 32); // set ADC interrupt priority in the interrupt controller
+	IntEnable(INT_ADC0); // enable ADC interrupt
 
 	while (true) {
 		FillFrame(0); // clear frame buffer
