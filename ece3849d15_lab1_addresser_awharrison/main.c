@@ -19,30 +19,37 @@
 #include <math.h>
 
 #define BUTTON_CLOCK 200 // button scanning interrupt rate in Hz
+#define ADC_BUFFER_SIZE 2048 // must be a power of 2
+#define ADC_BUFFER_WRAP(i) ((i) & (ADC_BUFFER_SIZE - 1)) // index wrapping macro
 
 // Global Variables
 unsigned long g_ulSystemClock; // system clock frequency in Hz
 volatile unsigned long g_ulTime = 0; // time in hundredths of a second
+volatile int g_iADCBufferIndex = ADC_BUFFER_SIZE - 1; // latest sample index
+volatile unsigned short g_pusADCBuffer[ADC_BUFFER_SIZE]; // circular buffer
+volatile unsigned long g_ulADCErrors = 0; // number of missed ADC deadlines
 
 // Function Prototypes
 void TimerISR(void);
+void ADC_ISR(void);
 
 int main(void) {
 
 	// Local Variables
+
 	char pcStr[50]; // string buffer
 	unsigned long ulTime; // local copy of g_ulTime
 	unsigned int minutes;
 	unsigned int seconds;
 	unsigned int fractions;
 	unsigned long ulDivider, ulPrescaler;
- 	int i; // counter for the analog clock face
-//	float dx, dy, sini, cosi;
+	int i; // counter for the analog clock face
+	//	float dx, dy, sini, cosi;
 	int x[60] = {64, 68, 72, 76, 79, 83, 86, 89, 92, 95, 97, 99, 100,
-	         101, 102, 102, 102, 101, 100, 99, 97, 95, 92, 89, 86, 83,
-	         79, 76, 72, 68, 64, 60, 56, 52, 49, 45, 42, 39, 36, 33,
-	         31, 29, 28, 27, 26, 26, 26, 27, 28, 29, 31, 33, 36, 39,
-	         42, 45, 49, 52, 56, 60
+			101, 102, 102, 102, 101, 100, 99, 97, 95, 92, 89, 86, 83,
+			79, 76, 72, 68, 64, 60, 56, 52, 49, 45, 42, 39, 36, 33,
+			31, 29, 28, 27, 26, 26, 26, 27, 28, 29, 31, 33, 36, 39,
+			42, 45, 49, 52, 56, 60
 	};
 	int y[60] = {14, 14, 15, 16, 17, 19, 21, 24, 27, 30, 33, 37, 40, 44, 48,
 			52, 56, 60, 64, 67, 71, 74, 77, 80, 83, 85, 87, 88, 89, 90,
@@ -53,7 +60,7 @@ int main(void) {
 	// initialize the clock generator
 	if (REVISION_IS_A2)
 		SysCtlLDOSet(SYSCTL_LDO_2_75V);
-		// sets the output of LDO to 2.75V
+	// sets the output of LDO to 2.75V
 
 	SysCtlClockSet(SYSCTL_SYSDIV_4 | SYSCTL_USE_PLL | SYSCTL_OSC_MAIN |
 			SYSCTL_XTAL_8MHZ);
@@ -129,7 +136,7 @@ int main(void) {
 	ADCSequenceDisable(ADC0_BASE, 0); // choose ADC sequence 0; disable before configuring
 	ADCSequenceConfigure(ADC0_BASE, 0, ADC_TRIGGER_ALWAYS, 0); // specify the "Always" trigger
 	ADCSequenceStepConfigure(ADC0_BASE, 0, 0, ADC_CTL_CH0 | ADC_CTL_IE | ADC_CTL_END); // in the 0th step, sample channel 0
-	 // enable interrupt, and make it the end of sequence
+	// enable interrupt, and make it the end of sequence
 	ADCIntEnable(ADC0_BASE, 0); // enable ADC interrupt from sequence 0
 	ADCSequenceEnable(ADC0_BASE, 0); // enable the sequence. it is now sampling
 	IntPrioritySet(INT_ADC0, 32); // set ADC interrupt priority in the interrupt controller
@@ -146,15 +153,15 @@ int main(void) {
 		usprintf(pcStr, "Time = %02d:%02d:%02d", minutes, seconds, fractions); // convert time to string
 		DrawString(0, 0, pcStr, 15, false); // draw string to frame buffer
 		DrawCircle(64, 52, 40, 2);
-//		for(i = 0; i < 360; i += 6) {
-//			sini = sin(i);
-//			cosi = cos(i);
-//			dx = 38.0*sini;
-//			dy = 38.0*cosi;
-//			x = 64 + dx;
-//			y = 52 + dy;
-//			DrawPoint(x, y, 8);
-//		}
+		//		for(i = 0; i < 360; i += 6) {
+		//			sini = sin(i);
+		//			cosi = cos(i);
+		//			dx = 38.0*sini;
+		//			dy = 38.0*cosi;
+		//			x = 64 + dx;
+		//			y = 52 + dy;
+		//			DrawPoint(x, y, 8);
+		//		}
 		// draw the points on the circle
 		for(i = 0; i <= 60; i++) {
 			if((i % 5) == 0)
@@ -170,6 +177,18 @@ int main(void) {
 	}
 
 	return 0;
+}
+
+
+void ADC_ISR(void) {
+	ADC_ISC_R = ADC_ISC_IN0;// clear ADC sequence0 interrupt flag in the ADCISC register
+	if (ADC0_OSTAT_R & ADC_OSTAT_OV0) { // check for ADC FIFO overflow
+		g_ulADCErrors++; // count errors - step 1 of the signoff
+		ADC0_OSTAT_R = ADC_OSTAT_OV0; // clear overflow condition
+	}
+	int buffer_index = ADC_BUFFER_WRAP(g_iADCBufferIndex + 1);
+	g_pusADCBuffer[buffer_index] = ADC_SSFIFO0_R; // read sample from the ADC sequence0 FIFO
+	g_iADCBufferIndex = buffer_index;
 }
 
 void TimerISR(void) {
@@ -193,7 +212,7 @@ void TimerISR(void) {
 		running = !running;
 	}
 	if (presses & 2) {
-        running = !running;
+		running = !running;
 		g_ulTime = 0;
 	}
 	if (running) {
@@ -203,8 +222,8 @@ void TimerISR(void) {
 		}
 		else
 			tic = true;
-//		if (g_ulTime == 360000)
-//			g_ulTime = 0;
+		//		if (g_ulTime == 360000)
+		//			g_ulTime = 0;
 	}
 }
 
