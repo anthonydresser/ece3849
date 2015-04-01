@@ -21,6 +21,7 @@
 // #define BUTTON_CLOCK 200 // button scanning interrupt rate in Hz
 #define ADC_BUFFER_SIZE 2048 // must be a power of 2
 #define ADC_BUFFER_WRAP(i) ((i) & (ADC_BUFFER_SIZE - 1)) // index wrapping macro
+#define SCREEN_SIZE	128
 
 // Global Variables
 unsigned long g_ulSystemClock; // system clock frequency in Hz
@@ -35,8 +36,12 @@ void ADC_ISR(void);
 int main(void) {
 
 	// Local Variables
-	int print_buffer_index;
-	char pcStr[50]; // string buffer
+	int trigger_val = 512; // 10-bit ADC
+	int temp_index;
+//	unsigned short temp_buffer[ADC_BUFFER_SIZE];
+	int p_buffer[SCREEN_SIZE]; // number of pixles that can be on the screen at one time
+	int i, j;
+	char pcStr[200]; // string buffer
 	// initialize the clock generator
 	if (REVISION_IS_A2)
 		SysCtlLDOSet(SYSCTL_LDO_2_75V);
@@ -96,10 +101,21 @@ int main(void) {
 			GPIO_PIN_TYPE_STD_WPU);
 
 	while (true) {
-//		FillFrame(0);
-//		usprintf(pcStr, "hello world"); // convert time to string
-//		DrawString(0, 0, pcStr, 15, false); // draw string to frame buffer
-//		RIT128x96x4ImageDraw(g_pucFrame, 0, 0, FRAME_SIZE_X, FRAME_SIZE_Y);
+		FillFrame(0);
+		// half screen width behind most recent sample is sample 1984
+		// 1/2 ADC units is 512
+		temp_index = g_iADCBufferIndex;
+		for(i = ADC_BUFFER_WRAP(temp_index - 64); i != (temp_index - 1024 - 64); i--) {
+			if((g_pusADCBuffer[ADC_BUFFER_WRAP(i)] < trigger_val) && (g_pusADCBuffer[ADC_BUFFER_WRAP(i + 1)] > trigger_val)) {
+				for(j = 0; j < SCREEN_SIZE; j++) {
+					p_buffer[j] = g_pusADCBuffer[ADC_BUFFER_WRAP(i - 63  + j)];
+				}
+			}
+		}
+		for(i = 0; i < SCREEN_SIZE; i++) {
+			DrawPoint(j, p_buffer[i]/96, 15);
+		}
+		RIT128x96x4ImageDraw(g_pucFrame, 0, 0, FRAME_SIZE_X, FRAME_SIZE_Y);
 	}
 
 	return 0;
