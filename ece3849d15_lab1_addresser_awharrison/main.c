@@ -33,6 +33,8 @@ volatile int g_iADCBufferIndex = ADC_BUFFER_SIZE - 1; // latest sample index
 volatile unsigned short g_pusADCBuffer[ADC_BUFFER_SIZE]; // circular buffer
 volatile unsigned long g_ulADCErrors = 0; // number of missed ADC deadlines
 const char * const g_ppcVoltageScaleStr[] = {"100 mV", "200 mV", "500 mV", "1 V"};
+const char * const g_ppcTimeScaleStr[] = {"2 us"};
+volatile int state = 0;
 
 typedef char DataType;		// FIFO data type
 volatile DataType fifo[FIFO_SIZE];	// FIFO storage array
@@ -49,16 +51,19 @@ int main(void) {
 
 	// Local Variables
 	int trigger_val = 512; // 10-bit ADC
-	float fVoltsPerDiv = 1;
+	float fVoltsPerDiv[] = {1, 2, 5, 10};
 	int temp_index;
 	int y;
 	int prevy;
 	float fScale;
+	int trigger_state = 0; //state for trigger, 0 = up trigger; 1 = down trigger
+	int selection_state = 0; //state for selection, 0 = time scale, 1 = voltage scale, 2 = trigger state
+	int voltage_state = 0; //state for voltage scale, 0 = 100mv, 1 = 200mv, 2 = 500mv, 3 = 1v
+	int timing_state = 0; // 0 = 2us
 	//	unsigned short temp_buffer[ADC_BUFFER_SIZE];
 	int p_buffer[FRAME_SIZE_X]; // number of pixles that can be on the screen at one time
 	int i, j;
 	unsigned long ulDivider, ulPrescaler;
-	int volt_counter = 0;
 	DataType c;
 	// initialize the clock generator
 	if (REVISION_IS_A2)
@@ -145,39 +150,9 @@ int main(void) {
 	GPIOPadConfigSet(GPIO_PORTE_BASE, GPIO_PIN_1, GPIO_STRENGTH_2MA,
 			GPIO_PIN_TYPE_STD_WPU);
 
-	fScale = (VIN_RANGE * PIXELS_PER_DIV)/((1 << ADC_BITS) * fVoltsPerDiv);
+	fScale = (VIN_RANGE * PIXELS_PER_DIV)/((1 << ADC_BITS) * fVoltsPerDiv[0]);
 
 	while (true) {
-		fifo_get(&c);
-		switch(c) {
-		case 'U':
-			volt_counter++;
-			if(volt_counter == 1) {
-				fScale = (VIN_RANGE * PIXELS_PER_DIV)/((1 << ADC_BITS) * 2);
-			}
-			if(volt_counter == 2) {
-				fScale = (VIN_RANGE * PIXELS_PER_DIV)/((1 << ADC_BITS) * 5);
-			}
-			if(volt_counter == 3) {
-				fScale = (VIN_RANGE * PIXELS_PER_DIV)/((1 << ADC_BITS) * 10);
-			}
-			if(volt_counter == 4) {
-				volt_counter = 0;
-				fScale = (VIN_RANGE * PIXELS_PER_DIV)/((1 << ADC_BITS) * fVoltsPerDiv);
-			}
-			break;
-		case 'D':
-			break;
-		case 'R':
-			break;
-		case 'L':
-			break;
-		case 'S':
-			break;
-		default:
-			break;
-		}
-
 		FillFrame(0);
 		// Draw Grid
 		for(i = 0; i <= 96; i += 12) {
@@ -188,6 +163,93 @@ int main(void) {
 		}
 		DrawLine(1, 48, 128, 48, 4);
 		DrawLine(64, 1, 64, 96, 4);
+
+		if(fifo_get(&c)) {
+			switch(c) {
+			case 'U':
+				switch(selection_state){
+				case 0:
+					break;
+				case 1:
+					switch(voltage_state){
+					case 0:
+						voltage_state = 1;
+						break;
+					case 1:
+						voltage_state = 2;
+						break;
+					case 2:
+						voltage_state = 3;
+						break;
+					}
+					break;
+				case 2:
+					trigger_state = !trigger_state;
+					break;
+				}
+				break;
+			case 'D':
+				switch(selection_state){
+					case 0:
+						break;
+					case 1:
+						switch(voltage_state){
+						case 1:
+							voltage_state = 0;
+							break;
+						case 2:
+							voltage_state = 1;
+							break;
+						case 3:
+							voltage_state = 2;
+							break;
+						}
+						break;
+					case 2:
+						trigger_state = !trigger_state;
+						break;
+					}
+				break;
+			case 'L':
+				switch(selection_state) {
+				case 0:
+					selection_state = 2;
+					break;
+				case 1:
+					selection_state = 0;
+					break;
+				case 2:
+					selection_state = 1;
+					break;
+				}
+				break;
+			case 'R':
+				switch(selection_state) {
+				case 0:
+					selection_state = 1;
+					break;
+				case 1:
+					selection_state = 2;
+					break;
+				case 2:
+					selection_state = 0;
+					break;
+				}
+				break;
+			case 'S':
+				trigger_state = !trigger_state;
+				break;
+			}
+		}
+		fScale = (VIN_RANGE * PIXELS_PER_DIV)/((1 << ADC_BITS) * fVoltsPerDiv[voltage_state]);
+//		DrawRectangle()
+		if(!trigger_state) {
+			DrawLine(110, 8, 114, 8, 15);
+			DrawLine(114, 8, 114, 2, 15);
+			DrawLine(114, 2, 118, 2, 15);
+		}
+		DrawString(50, 0, g_ppcVoltageScaleStr[voltage_state], 15, false);
+		DrawString(5, 0, g_ppcTimeScaleStr[timing_state], 15, false);
 		// half screen width behind most recent sample is sample 1984
 		// 1/2 ADC units is 512
 		temp_index = g_iADCBufferIndex;
@@ -265,7 +327,7 @@ void TimerISR(void) {
 			//down button
 			(~GPIO_PORTE_DATA_R & GPIO_PIN_1) +
 			//select button
-			(~GPIO_PORTF_DATA_R & GPIO_PIN_1) << 3);
+			((~GPIO_PORTF_DATA_R & GPIO_PIN_1) << 3));
 	presses = ~presses & g_ulButtons; // button press detector
 	if (presses & 1) { // up button pressed
 		fifo_put('U');
