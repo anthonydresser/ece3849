@@ -33,7 +33,7 @@ volatile int g_iADCBufferIndex = ADC_BUFFER_SIZE - 1; // latest sample index
 volatile unsigned short g_pusADCBuffer[ADC_BUFFER_SIZE]; // circular buffer
 volatile unsigned long g_ulADCErrors = 0; // number of missed ADC deadlines
 const char * const g_ppcVoltageScaleStr[] = {"100 mV", "200 mV", "500 mV", "1 V"};
-const char * const g_ppcTimeScaleStr[] = {"2 us"};
+const char * const g_ppcTimeScaleStr[] = {"24 us"};
 volatile int state = 0;
 
 typedef char DataType;		// FIFO data type
@@ -46,6 +46,12 @@ void TimerISR(void);
 void ADC_ISR(void);
 int fifo_put(DataType data);
 int fifo_get(DataType *data);
+unsigned long cpu_load_count(void);
+
+// CPU load counters
+unsigned long count_unloaded = 0;
+unsigned long count_loaded = 0;
+float cpu_load = 0.0;
 
 int main(void) {
 
@@ -56,6 +62,7 @@ int main(void) {
 	int y;
 	int prevy;
 	float fScale;
+	char pcStr[50]; // string buffer
 	int trigger_state = 0; //state for trigger, 0 = up trigger; 1 = down trigger
 	int selection_state = 0; //state for selection, 0 = time scale, 1 = voltage scale, 2 = trigger state
 	int voltage_state = 0; //state for voltage scale, 0 = 100mv, 1 = 200mv, 2 = 500mv, 3 = 1v
@@ -65,7 +72,9 @@ int main(void) {
 	int i, j;
 	unsigned long ulDivider, ulPrescaler;
 	DataType c;
+	int cpu_load_int = 0;
 	// initialize the clock generator
+	IntMasterDisable();
 	if (REVISION_IS_A2)
 		SysCtlLDOSet(SYSCTL_LDO_2_75V);
 	// sets the output of LDO to 2.75V
@@ -111,6 +120,11 @@ int main(void) {
 	IntPrioritySet(INT_TIMER0A, 32); // 0 = highest priority, 32 = next lower
 	IntEnable(INT_TIMER0A);
 
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER3);
+	TimerDisable(TIMER3_BASE, TIMER_BOTH);
+	TimerConfigure(TIMER3_BASE, TIMER_CFG_ONE_SHOT);
+	TimerLoadSet(TIMER3_BASE, TIMER_A, (g_ulSystemClock/50) - 1); // 1 sec interval
+
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC0); // enable the ADC
 	SysCtlADCSpeedSet(SYSCTL_ADCSPEED_500KSPS); // specify 500ksps
 	ADCSequenceDisable(ADC0_BASE, 0); // choose ADC sequence 0; disable before configuring
@@ -121,7 +135,6 @@ int main(void) {
 	ADCSequenceEnable(ADC0_BASE, 0); // enable the sequence. it is now sampling
 	IntPrioritySet(INT_ADC0, 0); // set ADC interrupt priority in the interrupt controller
 	IntEnable(INT_ADC0); // enable ADC interrupt
-	IntMasterEnable();
 
 	// configure GPIO used to read the state of the on-board push buttons
 	// select button
@@ -151,18 +164,22 @@ int main(void) {
 			GPIO_PIN_TYPE_STD_WPU);
 
 	fScale = (VIN_RANGE * PIXELS_PER_DIV)/((1 << ADC_BITS) * fVoltsPerDiv[0]);
+	count_unloaded = cpu_load_count();
+	IntMasterEnable();
 
 	while (true) {
+		count_loaded = cpu_load_count();
+		cpu_load = 1.0 - (float)count_loaded/count_unloaded; // compute CPU load
 		FillFrame(0);
 		// Draw Grid
 		for(i = 0; i <= 96; i += 12) {
-			DrawLine(1, i, 128, i, 1);
+			DrawLine(1, i, 128, i, 3);
 		}
-		for(i = 4; i <= 128; i +=12) {
-			DrawLine(i, 1, i, 96, 1);
+		for(i = 4; i <= 128; i += 12) {
+			DrawLine(i, 1, i, 96, 3);
 		}
-		DrawLine(1, 48, 128, 48, 4);
-		DrawLine(64, 1, 64, 96, 4);
+		DrawLine(1, 48, 128, 48, 8);
+		DrawLine(64, 1, 64, 96, 8);
 
 		if(fifo_get(&c)) {
 			switch(c) {
@@ -242,21 +259,49 @@ int main(void) {
 			}
 		}
 		fScale = (VIN_RANGE * PIXELS_PER_DIV)/((1 << ADC_BITS) * fVoltsPerDiv[voltage_state]);
-//		DrawRectangle()
+		switch(selection_state) {
+		case 0:
+			DrawFilledRectangle(3, 0, 34, 8, 5);
+			break;
+		case 1:
+			DrawFilledRectangle(47, 0, 90, 8, 5);
+			break;
+		case 2:
+			DrawFilledRectangle(108, 0, 122, 14, 5);
+			break;
+		}
 		if(!trigger_state) {
-			DrawLine(110, 8, 114, 8, 15);
-			DrawLine(114, 8, 114, 2, 15);
-			DrawLine(114, 2, 118, 2, 15);
+			DrawLine(110, 12, 116, 12, 15);
+			DrawLine(116, 12, 116, 2, 15);
+			DrawLine(116, 2, 122, 2, 15);
+			DrawLine(116, 4, 112, 8, 15);
+			DrawLine(116, 4, 120, 8, 15);
+		} else {
+			DrawLine(110, 2, 116, 2, 15);
+			DrawLine(116, 12, 116, 2, 15);
+			DrawLine(116, 12, 122, 12, 15);
+			DrawLine(116, 9, 112, 5, 15);
+			DrawLine(116, 9, 120, 5, 15);
 		}
 		DrawString(50, 0, g_ppcVoltageScaleStr[voltage_state], 15, false);
 		DrawString(5, 0, g_ppcTimeScaleStr[timing_state], 15, false);
 		// half screen width behind most recent sample is sample 1984
 		// 1/2 ADC units is 512
 		temp_index = g_iADCBufferIndex;
-		for(i = ADC_BUFFER_WRAP(temp_index - FRAME_SIZE_X/2); i != (temp_index - 1024 - FRAME_SIZE_X/2); i--) {
-			if((g_pusADCBuffer[ADC_BUFFER_WRAP(i)] < trigger_val) && (g_pusADCBuffer[ADC_BUFFER_WRAP(i + 1)] > trigger_val)) {
-				for(j = 0; j < FRAME_SIZE_X; j++) {
-					p_buffer[j] = g_pusADCBuffer[ADC_BUFFER_WRAP(i - 64  + j)];
+		if(!trigger_state){
+			for(i = ADC_BUFFER_WRAP(temp_index - FRAME_SIZE_X/2); i != (temp_index - 1024 - FRAME_SIZE_X/2); i--) {
+				if((g_pusADCBuffer[ADC_BUFFER_WRAP(i)] < trigger_val) && (g_pusADCBuffer[ADC_BUFFER_WRAP(i + 1)] > trigger_val)) {
+					for(j = 0; j < FRAME_SIZE_X; j++) {
+						p_buffer[j] = g_pusADCBuffer[ADC_BUFFER_WRAP(i - 64  + j)];
+					}
+				}
+			}
+		} else {
+			for(i = ADC_BUFFER_WRAP(temp_index - FRAME_SIZE_X/2); i != (temp_index - 1024 - FRAME_SIZE_X/2); i--) {
+				if((g_pusADCBuffer[ADC_BUFFER_WRAP(i)] > trigger_val) && (g_pusADCBuffer[ADC_BUFFER_WRAP(i + 1)] < trigger_val)) {
+					for(j = 0; j < FRAME_SIZE_X; j++) {
+						p_buffer[j] = g_pusADCBuffer[ADC_BUFFER_WRAP(i - 64  + j)];
+					}
 				}
 			}
 		}
@@ -267,6 +312,9 @@ int main(void) {
 			DrawLine(i-1, prevy, i, y, 15);
 			prevy = y;
 		}
+		cpu_load_int = (int)(cpu_load*1000.0);
+		usprintf(pcStr, "CPU Load = %02d.%01d%%", cpu_load_int/10, cpu_load_int % 10); // convert time to string
+		DrawString(0, 86, pcStr, 15, false); // draw string to frame buffer
 		RIT128x96x4ImageDraw(g_pucFrame, 0, 0, FRAME_SIZE_X, FRAME_SIZE_Y);
 	}
 
@@ -344,4 +392,14 @@ void TimerISR(void) {
 	if (presses & 16) { //select button
 		fifo_put('S');
 	}
+}
+
+unsigned long cpu_load_count(void)
+{
+	unsigned long i = 0;
+	TimerIntClear(TIMER3_BASE, TIMER_TIMA_TIMEOUT);
+	TimerEnable(TIMER3_BASE, TIMER_A); // start one-shot timer
+	while (!(TimerIntStatus(TIMER3_BASE, 0) & TIMER_TIMA_TIMEOUT))
+		i++;
+	return i;
 }
