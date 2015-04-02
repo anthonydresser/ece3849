@@ -18,21 +18,22 @@
 #include "driverlib/adc.h"
 #include <math.h>
 
-// #define BUTTON_CLOCK 200 // button scanning interrupt rate in Hz
+#define BUTTON_CLOCK 200 // button scanning interrupt rate in Hz
 #define ADC_BUFFER_SIZE 2048 // must be a power of 2
 #define ADC_BUFFER_WRAP(i) ((i) & (ADC_BUFFER_SIZE - 1)) // index wrapping macro
 #define	ADC_BITS	10
-#define PIXELS_PER_DIV	50
+#define PIXELS_PER_DIV	64
 #define	VIN_RANGE	6
 #define ADC_OFFSET	512
+#define FIFO_SIZE 10		// FIFO capacity is 1 item fewer
 
 // Global Variables
 unsigned long g_ulSystemClock; // system clock frequency in Hz
 volatile int g_iADCBufferIndex = ADC_BUFFER_SIZE - 1; // latest sample index
 volatile unsigned short g_pusADCBuffer[ADC_BUFFER_SIZE]; // circular buffer
 volatile unsigned long g_ulADCErrors = 0; // number of missed ADC deadlines
+const char * const g_ppcVoltageScaleStr[] = {"100 mV", "200 mV", "500 mV", "1 V"};
 
-#define FIFO_SIZE 10		// FIFO capacity is 1 item fewer
 typedef char DataType;		// FIFO data type
 volatile DataType fifo[FIFO_SIZE];	// FIFO storage array
 volatile int fifo_head = 0;	// index of the first item in the FIFO
@@ -48,7 +49,7 @@ int main(void) {
 
 	// Local Variables
 	int trigger_val = 512; // 10-bit ADC
-	float fVoltsPerDiv = .8;
+	float fVoltsPerDiv = 1;
 	int temp_index;
 	int y;
 	int prevy;
@@ -56,6 +57,9 @@ int main(void) {
 	//	unsigned short temp_buffer[ADC_BUFFER_SIZE];
 	int p_buffer[FRAME_SIZE_X]; // number of pixles that can be on the screen at one time
 	int i, j;
+	unsigned long ulDivider, ulPrescaler;
+	int volt_counter = 0;
+	DataType c;
 	// initialize the clock generator
 	if (REVISION_IS_A2)
 		SysCtlLDOSet(SYSCTL_LDO_2_75V);
@@ -141,25 +145,59 @@ int main(void) {
 	GPIOPadConfigSet(GPIO_PORTE_BASE, GPIO_PIN_1, GPIO_STRENGTH_2MA,
 			GPIO_PIN_TYPE_STD_WPU);
 
+	fScale = (VIN_RANGE * PIXELS_PER_DIV)/((1 << ADC_BITS) * fVoltsPerDiv);
+
 	while (true) {
-		DataType c;
-		if(fifo_get(&c)){
-			switch(c){
-			case 'U':
+		fifo_get(&c);
+		switch(c) {
+		case 'U':
+			volt_counter++;
+			if(volt_counter == 1) {
+				fScale = (VIN_RANGE * PIXELS_PER_DIV)/((1 << ADC_BITS) * 2);
 			}
+			if(volt_counter == 2) {
+				fScale = (VIN_RANGE * PIXELS_PER_DIV)/((1 << ADC_BITS) * 5);
+			}
+			if(volt_counter == 3) {
+				fScale = (VIN_RANGE * PIXELS_PER_DIV)/((1 << ADC_BITS) * 10);
+			}
+			if(volt_counter == 4) {
+				volt_counter = 0;
+				fScale = (VIN_RANGE * PIXELS_PER_DIV)/((1 << ADC_BITS) * fVoltsPerDiv);
+			}
+			break;
+		case 'D':
+			break;
+		case 'R':
+			break;
+		case 'L':
+			break;
+		case 'S':
+			break;
+		default:
+			break;
 		}
+
 		FillFrame(0);
+		// Draw Grid
+		for(i = 0; i <= 96; i += 12) {
+			DrawLine(1, i, 128, i, 1);
+		}
+		for(i = 4; i <= 128; i +=12) {
+			DrawLine(i, 1, i, 96, 1);
+		}
+		DrawLine(1, 48, 128, 48, 4);
+		DrawLine(64, 1, 64, 96, 4);
 		// half screen width behind most recent sample is sample 1984
 		// 1/2 ADC units is 512
 		temp_index = g_iADCBufferIndex;
 		for(i = ADC_BUFFER_WRAP(temp_index - FRAME_SIZE_X/2); i != (temp_index - 1024 - FRAME_SIZE_X/2); i--) {
 			if((g_pusADCBuffer[ADC_BUFFER_WRAP(i)] < trigger_val) && (g_pusADCBuffer[ADC_BUFFER_WRAP(i + 1)] > trigger_val)) {
 				for(j = 0; j < FRAME_SIZE_X; j++) {
-					p_buffer[j] = g_pusADCBuffer[ADC_BUFFER_WRAP(i - 63  + j)];
+					p_buffer[j] = g_pusADCBuffer[ADC_BUFFER_WRAP(i - 64  + j)];
 				}
 			}
 		}
-		fScale = (VIN_RANGE * PIXELS_PER_DIV)/((1 << ADC_BITS) * fVoltsPerDiv);
 		prevy = FRAME_SIZE_Y/2 - (int)round((p_buffer[0] - ADC_OFFSET) * fScale);
 		for(i = 1; i < FRAME_SIZE_X; i++) {
 			y = FRAME_SIZE_Y/2 - (int)round((p_buffer[i] - ADC_OFFSET) * fScale);
