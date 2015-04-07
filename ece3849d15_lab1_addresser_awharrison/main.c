@@ -185,10 +185,13 @@ int main(void) {
 			switch(c) {
 			case 'U':
 				switch(selection_state){
+				// case 0 = timing selection, case 1 = voltage selection, case 2 = trigger selection
 				case 0:
+					// timing state machine only has one state
 					break;
 				case 1:
 					switch(voltage_state){
+					// increments the voltage state 0 = 100mV/div, 1 = 200mV/div, 2 = 500mv/div, 3 = 1V/div
 					case 0:
 						voltage_state = 1;
 						break;
@@ -201,12 +204,14 @@ int main(void) {
 					}
 					break;
 				case 2:
+					// switches the trigger state
 					trigger_state = !trigger_state;
 					break;
 				}
 				break;
 			case 'D':
 				switch(selection_state){
+				// decrements the voltage state
 					case 0:
 						break;
 					case 1:
@@ -228,6 +233,7 @@ int main(void) {
 					}
 				break;
 			case 'L':
+				// cycles through the selection states 2, 1, 0, 2, 1, 0
 				switch(selection_state) {
 				case 0:
 					selection_state = 2;
@@ -241,6 +247,7 @@ int main(void) {
 				}
 				break;
 			case 'R':
+				// cycles through the selection states 0, 1, 2, 0, 1, 2
 				switch(selection_state) {
 				case 0:
 					selection_state = 1;
@@ -254,29 +261,35 @@ int main(void) {
 				}
 				break;
 			case 'S':
+				// regardless of selection state, will change the trigger
 				trigger_state = !trigger_state;
 				break;
 			}
 		}
-		fScale = (VIN_RANGE * PIXELS_PER_DIV)/((1 << ADC_BITS) * fVoltsPerDiv[voltage_state]);
+		fScale = (VIN_RANGE * PIXELS_PER_DIV)/((1 << ADC_BITS) * fVoltsPerDiv[voltage_state]); // fscale depends on the voltage state
 		switch(selection_state) {
 		case 0:
+			// highlights the time division on the OLED screen
 			DrawFilledRectangle(3, 0, 34, 8, 5);
 			break;
 		case 1:
+			// highlights the voltage division on the OLED screen
 			DrawFilledRectangle(47, 0, 90, 8, 5);
 			break;
 		case 2:
+			// highlights the trigger state on the OLED screen
 			DrawFilledRectangle(108, 0, 122, 14, 5);
 			break;
 		}
 		if(!trigger_state) {
+			// draws an upward trigger on the screen
 			DrawLine(110, 12, 116, 12, 15);
 			DrawLine(116, 12, 116, 2, 15);
 			DrawLine(116, 2, 122, 2, 15);
 			DrawLine(116, 4, 112, 8, 15);
 			DrawLine(116, 4, 120, 8, 15);
 		} else {
+			// draws a downwards trigger on the screen
 			DrawLine(110, 2, 116, 2, 15);
 			DrawLine(116, 12, 116, 2, 15);
 			DrawLine(116, 12, 122, 12, 15);
@@ -290,7 +303,7 @@ int main(void) {
 		temp_index = g_iADCBufferIndex;
 		if(!trigger_state){
 			for(i = ADC_BUFFER_WRAP(temp_index - FRAME_SIZE_X/2); i != (temp_index - 1024 - FRAME_SIZE_X/2); i--) {
-				if((g_pusADCBuffer[ADC_BUFFER_WRAP(i)] < trigger_val) && (g_pusADCBuffer[ADC_BUFFER_WRAP(i + 1)] > trigger_val)) {
+				if((g_pusADCBuffer[ADC_BUFFER_WRAP(i)] < trigger_val) && (g_pusADCBuffer[ADC_BUFFER_WRAP(i + 1)] > trigger_val)) { // triggers on the rising edge
 					for(j = 0; j < FRAME_SIZE_X; j++) {
 						p_buffer[j] = g_pusADCBuffer[ADC_BUFFER_WRAP(i - 64  + j)];
 					}
@@ -298,7 +311,7 @@ int main(void) {
 			}
 		} else {
 			for(i = ADC_BUFFER_WRAP(temp_index - FRAME_SIZE_X/2); i != (temp_index - 1024 - FRAME_SIZE_X/2); i--) {
-				if((g_pusADCBuffer[ADC_BUFFER_WRAP(i)] > trigger_val) && (g_pusADCBuffer[ADC_BUFFER_WRAP(i + 1)] < trigger_val)) {
+				if((g_pusADCBuffer[ADC_BUFFER_WRAP(i)] > trigger_val) && (g_pusADCBuffer[ADC_BUFFER_WRAP(i + 1)] < trigger_val)) { // triggers on the falling edge
 					for(j = 0; j < FRAME_SIZE_X; j++) {
 						p_buffer[j] = g_pusADCBuffer[ADC_BUFFER_WRAP(i - 64  + j)];
 					}
