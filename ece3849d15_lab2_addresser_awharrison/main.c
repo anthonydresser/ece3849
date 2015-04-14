@@ -12,34 +12,27 @@
 
 #include <ti/sysbios/knl/Task.h>
 
-Event_Handle buttonEvent;
-Mailbox_Handle buttonMailbox;
-
-typedef char button;		// button/mailbox data type
-
+typedef char DataType;		// button/mailbox data type
 /*
  *  ======== main ========
  */
 Void main()
 { 
-	Mailbox_Params mboxParams;
-	Error_Block eb;
+	DataType getButton;
 
-	Error_init(&eb);
-	buttonEvent = Event_create(NULL, &eb);
-	if(buttonEvent == NULL) {
-		System_abort("Event create failed");
+	Mailbox_pend(mailbox0, &getButton, BIOS_WAITFOREVER);
+	switch(getButton) {
+	case 'U':
+		break;
+	case 'D':
+		break;
+	case 'L':
+		break;
+	case 'R':
+		break;
+	case 'S':
+		break;
 	}
-
-	Mailbox_Params_init(&mboxParams);
-	mboxParams.notEmptyEvent = buttonEvent;
-	mboxParams.notEmptyEventId = Event_Id_00;
-	mbox = Mailbox_create(sizeof(button), 10, &mboxParams, &eb);
-	if(mbox == NULL){
-		system_abort("Mailbox create failed")
-	}
-
-
     BIOS_start();     /* enable interrupts and start SYS/BIOS */
 }
 
@@ -54,37 +47,9 @@ void ADC_ISR(void) {
 	g_iADCBufferIndex = buffer_index;
 }
 
-// put data into the FIFO, skip if full
-// returns 1 on success, 0 if FIFO was full
-int fifo_put(DataType data)
-{
-	int new_tail = fifo_tail + 1;
-	if (new_tail >= FIFO_SIZE) new_tail = 0; // wrap around
-	if (fifo_head != new_tail) {	// if the FIFO is not full
-		fifo[fifo_tail] = data;		// store data into the FIFO
-		fifo_tail = new_tail;		// advance FIFO tail index
-		return 1;					// success
-	}
-	return 0;	// full
-}
-
-// get data from the FIFO
-// returns 1 on success, 0 if FIFO was empty
-int fifo_get(DataType *data)
-{
-	if (fifo_head != fifo_tail) {	// if the FIFO is not empty
-		*data = fifo[fifo_head];	// read data from the FIFO
-		if(fifo_head +1 >= FIFO_SIZE)
-			fifo_head = 0;
-		else
-			fifo_head++;
-		return 1;					// success
-	}
-	return 0;	// empty
-}
-
 void TimerISR(void) {
 	unsigned long presses = g_ulButtons;
+	DataType button;
 	TIMER0_ICR_R = TIMER_ICR_TATOCINT; // clear interrupt flag
 	ButtonDebounce(
 			//up button
@@ -99,18 +64,27 @@ void TimerISR(void) {
 			((~GPIO_PORTF_DATA_R & GPIO_PIN_1) << 3));
 	presses = ~presses & g_ulButtons; // button press detector
 	if (presses & 1) { // up button pressed
-		fifo_put('U');
+		button = 'U';
 	}
 	if (presses & 2) { // down button
-		fifo_put('D');
+		button = 'D';
 	}
 	if (presses & 4) { // left button
-		fifo_put('L');
+		button = 'L';
 	}
 	if (presses & 8) { // right button
-		fifo_put('R');
+		button = 'R';
 	}
 	if (presses & 16) { //select button
-		fifo_put('S');
+		button = 'S';
 	}
+	Mailbox_post(mailbox0, &button, BIOS_NO_WAIT);
 }
+
+
+
+
+
+
+
+
