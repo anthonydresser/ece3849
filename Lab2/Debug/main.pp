@@ -195,6 +195,8 @@ main.obj: C:/ti/bios_6_35_01_29/packages/ti/sysbios/knl/Task.h
 main.obj: C:/ti/bios_6_35_01_29/packages/ti/sysbios/knl/Task.h
 main.obj: C:/ti/bios_6_35_01_29/packages/ti/sysbios/knl/Semaphore.h
 main.obj: C:/ti/bios_6_35_01_29/packages/ti/sysbios/knl/Semaphore.h
+main.obj: C:/ti/bios_6_35_01_29/packages/ti/sysbios/knl/Semaphore.h
+main.obj: C:/ti/bios_6_35_01_29/packages/ti/sysbios/knl/Semaphore.h
 main.obj: C:/ti/xdctools_3_25_00_48/packages/xdc/runtime/Error.h
 main.obj: C:/ti/xdctools_3_25_00_48/packages/xdc/runtime/System.h
 main.obj: C:/ti/xdctools_3_25_00_48/packages/xdc/runtime/Types.h
@@ -432,6 +434,8 @@ C:/ti/xdctools_3_25_00_48/packages/xdc/runtime/Diags.h:
 C:/ti/bios_6_35_01_29/packages/ti/sysbios/knl/Task.h: 
 C:/ti/bios_6_35_01_29/packages/ti/sysbios/knl/Task.h: 
 C:/ti/bios_6_35_01_29/packages/ti/sysbios/knl/Task.h: 
+C:/ti/bios_6_35_01_29/packages/ti/sysbios/knl/Semaphore.h: 
+C:/ti/bios_6_35_01_29/packages/ti/sysbios/knl/Semaphore.h: 
 C:/ti/bios_6_35_01_29/packages/ti/sysbios/knl/Semaphore.h: 
 C:/ti/bios_6_35_01_29/packages/ti/sysbios/knl/Semaphore.h: 
 C:/ti/xdctools_3_25_00_48/packages/xdc/runtime/Error.h: 

@@ -8,7 +8,7 @@
 #include <xdc/std.h>
 
 #include <ti/sysbios/knl/Task.h>
-extern const ti_sysbios_knl_Task_Handle buttonTask;
+extern const ti_sysbios_knl_Task_Handle ButtonTask;
 
 #include <ti/sysbios/family/arm/m3/Hwi.h>
 extern const ti_sysbios_family_arm_m3_Hwi_Handle ADCHwi;
@@ -20,13 +20,13 @@ extern const ti_sysbios_knl_Clock_Handle clock0;
 extern const ti_sysbios_knl_Mailbox_Handle mailbox0;
 
 #include <ti/sysbios/knl/Task.h>
-extern const ti_sysbios_knl_Task_Handle inputTask;
+extern const ti_sysbios_knl_Task_Handle InputTask;
 
 #include <ti/sysbios/knl/Task.h>
-extern const ti_sysbios_knl_Task_Handle displayTask;
+extern const ti_sysbios_knl_Task_Handle DisplayTask;
 
 #include <ti/sysbios/knl/Task.h>
-extern const ti_sysbios_knl_Task_Handle waveformTask;
+extern const ti_sysbios_knl_Task_Handle WaveformTask;
 
 #include <ti/sysbios/knl/Semaphore.h>
 extern const ti_sysbios_knl_Semaphore_Handle sem_button;
@@ -35,13 +35,10 @@ extern const ti_sysbios_knl_Semaphore_Handle sem_button;
 extern const ti_sysbios_knl_Semaphore_Handle sem_display;
 
 #include <ti/sysbios/knl/Semaphore.h>
-extern const ti_sysbios_knl_Semaphore_Handle sem_voltage;
+extern const ti_sysbios_knl_Semaphore_Handle sem_buf;
 
 #include <ti/sysbios/knl/Semaphore.h>
-extern const ti_sysbios_knl_Semaphore_Handle sem_selection;
-
-#include <ti/sysbios/knl/Semaphore.h>
-extern const ti_sysbios_knl_Semaphore_Handle sem_trigger;
+extern const ti_sysbios_knl_Semaphore_Handle sem_waveform;
 
 extern int xdc_runtime_Startup__EXECFXN__C;
 

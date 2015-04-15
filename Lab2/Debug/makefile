@@ -8,6 +8,7 @@ CG_TOOL_ROOT := C:/ti/ccsv5/tools/compiler/arm_5.0.4
 
 ORDERED_OBJS += \
 $(GEN_CMDS__FLAG) \
+"./ustdlib.obj" \
 "./rit128x96x4.obj" \
 "./main.obj" \
 "./frame_graphics.obj" \
@@ -127,8 +128,8 @@ Lab2.out: $(OBJS) $(CMD_SRCS) $(GEN_CMDS)
 clean:
 	-$(RM) $(TMS470_EXECUTABLE_OUTPUTS__QUOTED)$(GEN_SRCS__QUOTED)$(GEN_MISC_FILES__QUOTED)$(GEN_OPTS__QUOTED)$(GEN_CMDS__QUOTED) "Lab2.out"
 	-$(RMDIR) $(GEN_MISC_DIRS__QUOTED)
-	-$(RM) "buttons.pp" "frame_graphics.pp" "main.pp" "rit128x96x4.pp" 
-	-$(RM) "buttons.obj" "frame_graphics.obj" "main.obj" "rit128x96x4.obj" 
+	-$(RM) "buttons.pp" "frame_graphics.pp" "main.pp" "rit128x96x4.pp" "ustdlib.pp" 
+	-$(RM) "buttons.obj" "frame_graphics.obj" "main.obj" "rit128x96x4.obj" "ustdlib.obj" 
 	-@echo 'Finished clean'
 	-@echo ' '
 

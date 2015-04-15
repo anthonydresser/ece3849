@@ -13,13 +13,15 @@ C_SRCS += \
 ../buttons.c \
 ../frame_graphics.c \
 ../main.c \
-C:/StellarisWare/boards/ek-lm3s8962/drivers/rit128x96x4.c 
+C:/StellarisWare/boards/ek-lm3s8962/drivers/rit128x96x4.c \
+C:/StellarisWare/utils/ustdlib.c 
 
 OBJS += \
 ./buttons.obj \
 ./frame_graphics.obj \
 ./main.obj \
-./rit128x96x4.obj 
+./rit128x96x4.obj \
+./ustdlib.obj 
 
 GEN_SRCS += \
 ./configPkg/compiler.opt \
@@ -29,7 +31,8 @@ C_DEPS += \
 ./buttons.pp \
 ./frame_graphics.pp \
 ./main.pp \
-./rit128x96x4.pp 
+./rit128x96x4.pp \
+./ustdlib.pp 
 
 GEN_MISC_DIRS += \
 ./configPkg/ 
@@ -51,13 +54,15 @@ C_DEPS__QUOTED += \
 "buttons.pp" \
 "frame_graphics.pp" \
 "main.pp" \
-"rit128x96x4.pp" 
+"rit128x96x4.pp" \
+"ustdlib.pp" 
 
 OBJS__QUOTED += \
 "buttons.obj" \
 "frame_graphics.obj" \
 "main.obj" \
-"rit128x96x4.obj" 
+"rit128x96x4.obj" \
+"ustdlib.obj" 
 
 GEN_OPTS__FLAG += \
 --cmd_file="./configPkg/compiler.opt" 
@@ -69,6 +74,7 @@ C_SRCS__QUOTED += \
 "../buttons.c" \
 "../frame_graphics.c" \
 "../main.c" \
-"C:/StellarisWare/boards/ek-lm3s8962/drivers/rit128x96x4.c" 
+"C:/StellarisWare/boards/ek-lm3s8962/drivers/rit128x96x4.c" \
+"C:/StellarisWare/utils/ustdlib.c" 
 
 
