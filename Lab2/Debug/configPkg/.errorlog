@@ -1,6 +1,6 @@
-"package/cfg/app_pem3.c", line 17803: error: declaration is incompatible with "void buttonTask(xdc_UArg, xdc_UArg)" (declared at line 1532)
-"package/cfg/app_pem3.c", line 17831: error: declaration is incompatible with "void inputTask(xdc_UArg, xdc_UArg)" (declared at line 1560)
-"package/cfg/app_pem3.c", line 17838: error: declaration is incompatible with "void displayTask(xdc_UArg, xdc_UArg)" (declared at line 1588)
-"package/cfg/app_pem3.c", line 17845: error: declaration is incompatible with "void waveformTask(xdc_UArg, xdc_UArg)" (declared at line 1616)
+"package/cfg/app_pem3.c", line 17877: error: declaration is incompatible with "void buttonTask(xdc_UArg, xdc_UArg)" (declared at line 1532)
+"package/cfg/app_pem3.c", line 17905: error: declaration is incompatible with "void inputTask(xdc_UArg, xdc_UArg)" (declared at line 1560)
+"package/cfg/app_pem3.c", line 17912: error: declaration is incompatible with "void displayTask(xdc_UArg, xdc_UArg)" (declared at line 1588)
+"package/cfg/app_pem3.c", line 17919: error: declaration is incompatible with "void waveformTask(xdc_UArg, xdc_UArg)" (declared at line 1616)
 4 errors detected in the compilation of "package/cfg/app_pem3.c".
 gmake.exe: *** [package/cfg/app_pem3.oem3] Error 1

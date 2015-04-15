@@ -43,6 +43,29 @@ const char * const g_ppcVoltageScaleStr[] = {"100 mV", "200 mV", "500 mV", "1 V"
 const char * const g_ppcTimeScaleStr[] = {"24 us"};
 volatile int state = 0;
 int cpu_load_int = 0;
+
+// CPU load counters
+unsigned long count_unloaded = 0;
+unsigned long count_loaded = 0;
+float cpu_load = 0.0;
+
+//// probably will be moved to tasks
+// Local Variables
+	int trigger_val = 512; // 10-bit ADC
+	float fVoltsPerDiv[] = {1, 2, 5, 10};
+	int temp_index;
+	int y;
+	int prevy;
+	float fScale;
+	char pcStr[50]; // string buffer
+	int trigger_state = 0; //state for trigger, 0 = up trigger; 1 = down trigger
+	int selection_state = 0; //state for selection, 0 = time scale, 1 = voltage scale, 2 = trigger state
+	int voltage_state = 0; //state for voltage scale, 0 = 100mv, 1 = 200mv, 2 = 500mv, 3 = 1v
+	int timing_state = 0; // 0 = 2us
+	//	unsigned short temp_buffer[ADC_BUFFER_SIZE];
+	int p_buffer[FRAME_SIZE_X]; // number of pixles that can be on the screen at one time
+	int i, j;
+	unsigned long ulDivider, ulPrescaler;
 /*
  *  ======== main ========
  */
@@ -129,6 +152,37 @@ void displayTask(UArg arg0, UArg arg1) {
 			//			DrawPoint(i, y, 15);
 			DrawLine(i-1, prevy, i, y, 15);
 			prevy = y;
+			switch(selection_state) {
+			case 0:
+				// highlights the time division on the OLED screen
+				DrawFilledRectangle(3, 0, 34, 8, 5);
+				break;
+			case 1:
+				// highlights the voltage division on the OLED screen
+				DrawFilledRectangle(47, 0, 90, 8, 5);
+				break;
+			case 2:
+				// highlights the trigger state on the OLED screen
+				DrawFilledRectangle(108, 0, 122, 14, 5);
+				break;
+			}
+			if(!trigger_state) {
+				// draws an upward trigger on the screen
+				DrawLine(110, 12, 116, 12, 15);
+				DrawLine(116, 12, 116, 2, 15);
+				DrawLine(116, 2, 122, 2, 15);
+				DrawLine(116, 4, 112, 8, 15);
+				DrawLine(116, 4, 120, 8, 15);
+			} else {
+				// draws a downwards trigger on the screen
+				DrawLine(110, 2, 116, 2, 15);
+				DrawLine(116, 12, 116, 2, 15);
+				DrawLine(116, 12, 122, 12, 15);
+				DrawLine(116, 9, 112, 5, 15);
+				DrawLine(116, 9, 120, 5, 15);
+			}
+			DrawString(50, 0, g_ppcVoltageScaleStr[voltage_state], 15, false);
+			DrawString(5, 0, g_ppcTimeScaleStr[timing_state], 15, false);
 		}
 		usprintf(pcStr, "CPU Load = %02d.%01d%%", cpu_load_int/10, cpu_load_int % 10); // convert time to string
 		DrawString(0, 86, pcStr, 15, false); // draw string to frame buffer
@@ -145,17 +199,104 @@ void inputTask(UArg arg0, UArg arg1) {
 		Mailbox_pend(mailbox0, &getButton, BIOS_WAIT_FOREVER);
 		switch(getButton) {
 		case 'U':
+			Semaphore_pend(sem_selection, BIOS_WAIT_FOREVER);
+			switch(selection_state){
+			// case 0 = timing selection, case 1 = voltage selection, case 2 = trigger selection
+			case 0:
+				// timing state machine only has one state
+				break;
+			case 1:
+				Semaphore_pend(sem_voltage, BIOS_WAIT_FOREVER);
+				switch(voltage_state){
+				// increments the voltage state 0 = 100mV/div, 1 = 200mV/div, 2 = 500mv/div, 3 = 1V/div
+				case 0:
+					voltage_state = 1;
+					break;
+				case 1:
+					voltage_state = 2;
+					break;
+				case 2:
+					voltage_state = 3;
+					break;
+				}
+				Semaphore_post(sem_voltage);
+				break;
+			case 2:
+				Semaphore_pend(sem_trigger, BIOS_WAIT_FOREVER);
+				// switches the trigger state
+				trigger_state = !trigger_state;
+				Semaphore_post(sem_trigger);
+				break;
+			}
+			Semaphore_post(sem_selection);
 			break;
-		case 'D':
-			break;
-		case 'L':
-			break;
-		case 'R':
-			break;
-		case 'S':
-			break;
+			case 'D':
+				Sempaphore_pend(sem_selection, BIOS_WAIT_FOREVER);
+				switch(selection_state){
+				// decrements the voltage state
+				case 0:
+					break;
+				case 1:
+					Semaphore_pend(sem_voltage, BIOS_WAIT_FOREVER);
+					switch(voltage_state){
+					case 1:
+						voltage_state = 0;
+						break;
+					case 2:
+						voltage_state = 1;
+						break;
+					case 3:
+						voltage_state = 2;
+						break;
+					}
+					Semaphore_post(sem_voltage);
+					break;
+				case 2:
+					Semaphore_pend(sem_trigger, BIOS_WAIT_FOREVER);
+					trigger_state = !trigger_state;
+					Semaphore_post(sem_trigger);
+					break;
+				}
+				Semaphore_post(sem_selection);
+				break;
+				case 'L':
+					// cycles through the selection states 2, 1, 0, 2, 1, 0
+					switch(selection_state) {
+					case 0:
+						selection_state = 2;
+						break;
+					case 1:
+						selection_state = 0;
+						break;
+					case 2:
+						selection_state = 1;
+						break;
+					}
+					break;
+				case 'R':
+					// cycles through the selection states 0, 1, 2, 0, 1, 2
+					switch(selection_state) {
+					case 0:
+						selection_state = 1;
+						break;
+					case 1:
+						selection_state = 2;
+						break;
+					case 2:
+						selection_state = 0;
+						break;
+					}
+				break;
+				case 'S':
+					Semaphore_pend(sem_trigger, BIOS_WAIT_FOREVER);
+					// regardless of selection state, will change the trigger
+					trigger_state = !trigger_state;
+					Semaphore_post(sem_trigger);
+					break;
 		}
 	}
+	fScale = (VIN_RANGE * PIXELS_PER_DIV)/((1 << ADC_BITS) * fVoltsPerDiv[voltage_state]); // fscale depends on the voltage state
+	Semaphore_post(sem_display);
 }
 
 void waveformTask(UArg arg0, UArg arg1) {
