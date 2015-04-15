@@ -43,12 +43,13 @@ const char * const g_ppcVoltageScaleStr[] = {"100 mV", "200 mV", "500 mV", "1 V"
 const char * const g_ppcTimeScaleStr[] = {"24 us"};
 volatile int state = 0;
 int cpu_load_int = 0;
+int p_buffer[FRAME_SIZE_X]; // number of pixles that can be on the screen at one time
 /*
  *  ======== main ========
  */
 Void main()
 {
-		IntMasterDisable();
+        IntMasterDisable();
 		SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC0); // enable the ADC
 		SysCtlADCSpeedSet(SYSCTL_ADCSPEED_500KSPS); // specify 500ksps
 		ADCSequenceDisable(ADC0_BASE, 0); // choose ADC sequence 0; disable before configuring
@@ -159,9 +160,31 @@ void inputTask(UArg arg0, UArg arg1) {
 }
 
 void waveformTask(UArg arg0, UArg arg1) {
+    int temp_index;
+    int temp_trigger_state;
 	while(1) {
 		Semaphore_pend(, BIOS_WAIT_FOREVER);
-
+        temp_index = g_iADCBufferIndex;
+        temp_trigger_state = trigger_state;
+        Semaphore_pend(sem_buf, BIOS_WAIT_FOREVER);
+        if(!temp_trigger_state){
+            for(i = ADC_BUFFER_WRAP(temp_index - FRAME_SIZE_X/2); i != (temp_index - 1024 - FRAME_SIZE_X/2); i--) {
+                if((g_pusADCBuffer[ADC_BUFFER_WRAP(i)] < trigger_val) && (g_pusADCBuffer[ADC_BUFFER_WRAP(i + 1)] > trigger_val)) { // triggers on the rising edge
+                    for(j = 0; j < FRAME_SIZE_X; j++) {
+                        p_buffer[j] = g_pusADCBuffer[ADC_BUFFER_WRAP(i - 64  + j)];
+                    }
+                }
+            }
+        } else {
+            for(i = ADC_BUFFER_WRAP(temp_index - FRAME_SIZE_X/2); i != (temp_index - 1024 - FRAME_SIZE_X/2); i--) {
+                if((g_pusADCBuffer[ADC_BUFFER_WRAP(i)] > trigger_val) && (g_pusADCBuffer[ADC_BUFFER_WRAP(i + 1)] < trigger_val)) { // triggers on the falling edge
+                    for(j = 0; j < FRAME_SIZE_X; j++) {
+                        p_buffer[j] = g_pusADCBuffer[ADC_BUFFER_WRAP(i - 64  + j)];
+                    }
+                }
+            }
+        }
+        Semaphore_post(sem_buf);
 		Semaphore_post(sem_display);
 	}
 }
