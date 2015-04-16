@@ -8,8 +8,12 @@ CG_TOOL_ROOT := C:/ti/ccsv5/tools/compiler/arm_5.0.4
 
 ORDERED_OBJS += \
 $(GEN_CMDS__FLAG) \
+"./ustdlib.obj" \
 "./rit128x96x4.obj" \
 "./main.obj" \
+"./kiss_fft.obj" \
+"./frame_graphics.obj" \
+"./buttons.obj" \
 -l"libc.a" \
 -l"C:\StellarisWare/driverlib/ccs-cm3/Debug/driverlib-cm3.lib" \
 "../lm3s8962.cmd" \
@@ -125,8 +129,8 @@ ece3849d15_lab2_addresser_awharrison.out: $(OBJS) $(CMD_SRCS) $(GEN_CMDS)
 clean:
 	-$(RM) $(TMS470_EXECUTABLE_OUTPUTS__QUOTED)$(GEN_SRCS__QUOTED)$(GEN_MISC_FILES__QUOTED)$(GEN_OPTS__QUOTED)$(GEN_CMDS__QUOTED) "ece3849d15_lab2_addresser_awharrison.out"
 	-$(RMDIR) $(GEN_MISC_DIRS__QUOTED)
-	-$(RM) "main.pp" "rit128x96x4.pp" 
-	-$(RM) "main.obj" "rit128x96x4.obj" 
+	-$(RM) "buttons.pp" "frame_graphics.pp" "kiss_fft.pp" "main.pp" "rit128x96x4.pp" "ustdlib.pp" 
+	-$(RM) "buttons.obj" "frame_graphics.obj" "kiss_fft.obj" "main.obj" "rit128x96x4.obj" "ustdlib.obj" 
 	-@echo 'Finished clean'
 	-@echo ' '
 
