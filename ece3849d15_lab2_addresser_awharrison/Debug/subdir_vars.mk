@@ -12,7 +12,7 @@ CFG_SRCS += \
 C_SRCS += \
 ../buttons.c \
 ../frame_graphics.c \
-C:/Users/Abby\ Harrison/Documents/ece3849/kiss_fft130/kiss_fft.c \
+../kiss_fft.c \
 ../main.c \
 C:/StellarisWare/boards/ek-lm3s8962/drivers/rit128x96x4.c \
 C:/StellarisWare/utils/ustdlib.c 
@@ -78,7 +78,7 @@ GEN_CMDS__FLAG += \
 C_SRCS__QUOTED += \
 "../buttons.c" \
 "../frame_graphics.c" \
-"C:/Users/Abby Harrison/Documents/ece3849/kiss_fft130/kiss_fft.c" \
+"../kiss_fft.c" \
 "../main.c" \
 "C:/StellarisWare/boards/ek-lm3s8962/drivers/rit128x96x4.c" \
 "C:/StellarisWare/utils/ustdlib.c" 

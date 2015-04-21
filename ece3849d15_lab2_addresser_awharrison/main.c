@@ -37,6 +37,8 @@ typedef char DataType;		// button/mailbox data type
 #define PIXELS_PER_DIV	64
 #define	VIN_RANGE	6
 #define ADC_OFFSET	512
+#define DB_SCALE 40
+#define DB_OFFSET -96
 
 #define PI 3.14159265358979
 #define NFFT 1024 // FFT length
@@ -52,7 +54,6 @@ const char * const g_ppcVoltageScaleStr[] = {"100 mV", "200 mV", "500 mV", "1 V"
 const char * const g_ppcTimeScaleStr[] = {"24 us"};
 volatile int state = 0;
 //int cpu_load_int = 0;
-int p_buffer[FRAME_SIZE_X]; // number of pixles that can be on the screen at one time
 
 // CPU load counters
 //unsigned long count_unloaded = 0;
@@ -66,14 +67,14 @@ int trigger_val = 512; // 10-bit ADC
 float fVoltsPerDiv[] = {1, 2, 5, 10};
 float fScale;
 char pcStr[50]; // string buffer
-int trigger_state = 0; //state for trigger, 0 = up trigger; 1 = down trigger
-int selection_state = 0; //state for selection, 0 = time scale, 1 = voltage scale, 2 = trigger state
-int voltage_state = 0; //state for voltage scale, 0 = 100mv, 1 = 200mv, 2 = 500mv, 3 = 1v
-int timing_state = 0; // 0 = 2us
-int display_state = 0; // state for display, 0 = oscilloscope; 1 = FFT scope
+short trigger_state = 0; //state for trigger, 0 = up trigger; 1 = down trigger
+short selection_state = 0; //state for selection, 0 = time scale, 1 = voltage scale, 2 = trigger state
+short voltage_state = 0; //state for voltage scale, 0 = 100mv, 1 = 200mv, 2 = 500mv, 3 = 1v
+short timing_state = 0; // 0 = 2us
+short display_state = 0; // state for display, 0 = oscilloscope; 1 = FFT scope
 //	unsigned short temp_buffer[ADC_BUFFER_SIZE];
-int p_buffer[FRAME_SIZE_X]; // number of pixles that can be on the screen at one time
-float fft_buffer[FRAME_SIZE_X];
+short p_buffer[FRAME_SIZE_X]; // number of pixles that can be on the screen at one time
+short fft_buffer[FRAME_SIZE_X];
 unsigned long ulDivider, ulPrescaler;
 
 // function prototypes
@@ -197,9 +198,9 @@ void buttonTask(void) {
 }
 
 void displayTask(UArg arg0, UArg arg1) {
-	int i = 0;
-	int y;
-	int prevy;
+	short i = 0;
+	short y;
+	short prevy;
 	while(1) {
 		Semaphore_pend(sem_display, BIOS_WAIT_FOREVER);
 		FillFrame(0);
@@ -258,9 +259,16 @@ void displayTask(UArg arg0, UArg arg1) {
 		case 1:
 			DrawString(5, 0, "7.299Hz", 15, false);
 			DrawString(50, 0, "20 dBV", 15, false);
-			prevy = FRAME_SIZE_Y/2 - (int)round(log10(fft_buffer[0]));
+			prevy = FRAME_SIZE_Y/2 - fft_buffer[0];
+			// Draw Grid
+			for(i = 8; i <= 96; i += 20) {
+				DrawLine(1, i, 128, i, 3);
+			}
+			for(i = 4; i <= 128; i += 20) {
+				DrawLine(i, 1, i, 96, 3);
+			}
 			for(i = 1; i < FRAME_SIZE_X; i++) {
-				y = FRAME_SIZE_Y/2 - (int)round(log10(fft_buffer[i]));
+				y = FRAME_SIZE_Y/2 - fft_buffer[i];
 				//			DrawPoint(i, y, 15);
 				DrawLine(i-1, prevy, i, y, 15);
 				prevy = y;
@@ -371,15 +379,15 @@ void inputTask(UArg arg0, UArg arg1) {
 }
 
 void waveformTask(UArg arg0, UArg arg1) {
-	int temp_index;
-	int temp_trigger_state;
-	int i, j;
+	short temp_index;
+	short temp_trigger_state;
+	short i, j;
 	while(1) {
 		Semaphore_pend(sem_waveform, BIOS_WAIT_FOREVER);
+		temp_index = g_iADCBufferIndex;
+		temp_trigger_state = trigger_state;
 		switch(display_state) {
 		case 0:
-			temp_index = g_iADCBufferIndex;
-			temp_trigger_state = trigger_state;
 			if(!temp_trigger_state){
 				for(i = ADC_BUFFER_WRAP(temp_index - FRAME_SIZE_X/2); i != (temp_index - 1024 - FRAME_SIZE_X/2); i--) {
 					if((g_pusADCBuffer[ADC_BUFFER_WRAP(i)] < trigger_val) && (g_pusADCBuffer[ADC_BUFFER_WRAP(i + 1)] > trigger_val)) { // triggers on the rising edge
@@ -399,8 +407,10 @@ void waveformTask(UArg arg0, UArg arg1) {
 			}
 			break;
 		case 1:
-			for(i = 0; i == 1023; i++) {
-				g_waveformBuffer[i] = g_pusADCBuffer[i];
+			j = 0;
+			for(i = temp_index - 1024; i != temp_index; i++) {
+				g_waveformBuffer[j] = g_pusADCBuffer[ADC_BUFFER_WRAP(i)];
+				j++;
 			}
 			break;
 		}
@@ -413,24 +423,25 @@ void waveformTask(UArg arg0, UArg arg1) {
 
 void FFT_Task(UArg agr0, UArg arg1) {
 	while(1) {
-		semaphore_pend(sem_fft, BIOS_WAIT_FOREVER);
+		Semaphore_pend(sem_fft, BIOS_WAIT_FOREVER);
 		static char kiss_fft_cfg_buffer[KISS_FFT_CFG_SIZE]; // Kiss FFT config memory
 		size_t buffer_size = KISS_FFT_CFG_SIZE;
 		kiss_fft_cfg cfg; // Kiss FFT config
 		static kiss_fft_cpx in[NFFT], out[NFFT]; // complex waveform and spectrum buffers
-		int i;
+		short i;
 
 		cfg = kiss_fft_alloc(NFFT, 0, kiss_fft_cfg_buffer, &buffer_size); // init Kiss FFT
 
 		for (i = 0; i < NFFT; i++) { // generate an input waveform
-		 in[i].r = g_waveformBuffer[i]; // real part of waveform
+		 in[i].r = g_waveformBuffer[i]*(.54 - .46*cos((2*PI*i)/(NFFT-1))); // Hamming window function applied to input
 		 in[i].i = 0; // imaginary part of waveform
 		}
 		kiss_fft(cfg, in, out); // compute FFT
-		for(1 = 0; i < FRAME_SIZE_X; i++) {
-			fft_buffer[i] = out[i];
+		for(i = 1; i < FRAME_SIZE_X; i++) {
+//			fft_buffer[i] = log10(out[i].r*out[i].r + out[i].i*out[i].i)*DB_SCALE + DB_OFFSET; // first fft
+			fft_buffer[i] = sqrt(log10(out[i].r*out[i].r + out[i].i*out[i].i))*DB_SCALE + DB_OFFSET; // better fft?
 		}
-		semaphore_post(sem_display);
+		Semaphore_post(sem_display);
 	}
 }
 
