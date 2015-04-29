@@ -2,7 +2,7 @@
 
 var targ = xdc.module('ti.targets.arm.elf.M3');
 /* configuro was told the platform explicitly */
-var platform = 'ti.platforms.stellaris:LM3S8962';
+var platform = 'ti.platforms.stellaris:LM3S2110';
 
 /* decide whether to make an assembly or an executable */
 var makeAssembly = false;
@@ -11,7 +11,7 @@ var makeAssembly = false;
 var Executable = xdc.module('xdc.bld.Executable');
 
 var exeOpts = new Executable.Attrs({
-        cfgScript: 'C:/Users/Abby Harrison/Documents/ece3849/ece3849d15_lab2_addresser_awharrison/app.cfg',
+        cfgScript: 'C:/Users/Abby Harrison/Documents/ece3849/ece3849d15_lab3_addresser_awharrison/app.cfg',
         profile: 'release',
         cfgHome: 'configPkg',
 });
@@ -41,7 +41,7 @@ else {
 
 var thisObj = {
     cfg:        '../app.cfg',
-    outputPath: 'C:/Users/Abby Harrison/Documents/ece3849/ece3849d15_lab2_addresser_awharrison/Debug/configPkg',
+    outputPath: 'C:/Users/Abby Harrison/Documents/ece3849/ece3849d15_lab3_addresser_awharrison/Debug/configPkg',
     exeName:    'app' + suffix,
     exeIntName: 'app' + suffix.replace('.', '_'),
     targ:       targ,

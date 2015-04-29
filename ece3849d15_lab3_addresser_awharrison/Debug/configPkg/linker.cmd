@@ -9,8 +9,8 @@
  */
 
 
--l"C:\Users\Abby Harrison\Documents\ece3849\ece3849d15_lab2_addresser_awharrison\Debug\configPkg\package\cfg\app_pem3.oem3"
--l"C:\Users\Abby Harrison\Documents\ece3849\ece3849d15_lab2_addresser_awharrison\src\sysbios\sysbios.aem3"
+-l"C:\Users\Abby Harrison\Documents\ece3849\ece3849d15_lab3_addresser_awharrison\Debug\configPkg\package\cfg\app_pem3.oem3"
+-l"C:\Users\Abby Harrison\Documents\ece3849\ece3849d15_lab3_addresser_awharrison\src\sysbios\sysbios.aem3"
 -l"C:\ti\xdctools_3_25_00_48\packages\ti\catalog\arm\cortexm3\lm3init\lib\Boot.aem3"
 -l"C:\ti\xdctools_3_25_00_48\packages\ti\targets\arm\rtsarm\lib\ti.targets.arm.rtsarm.aem3"
 -l"C:\ti\xdctools_3_25_00_48\packages\ti\targets\arm\rtsarm\lib\boot.aem3"
@@ -124,7 +124,7 @@
  */
 xdc_runtime_Startup__EXECFXN__C = 1;
 xdc_runtime_Startup__RESETFXN__C = 1;
-TSK_idle = ti_sysbios_knl_Task_Object__table__V + 304;
+TSK_idle = ti_sysbios_knl_Task_Object__table__V + 0;
 
 
 SECTIONS

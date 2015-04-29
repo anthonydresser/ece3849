@@ -9,14 +9,11 @@ CG_TOOL_ROOT := C:/ti/ccsv5/tools/compiler/arm_5.0.4
 ORDERED_OBJS += \
 $(GEN_CMDS__FLAG) \
 "./ustdlib.obj" \
-"./rit128x96x4.obj" \
+"./network.obj" \
 "./main.obj" \
-"./kiss_fft.obj" \
-"./frame_graphics.obj" \
-"./buttons.obj" \
--l"libc.a" \
 -l"C:\StellarisWare/driverlib/ccs-cm3/Debug/driverlib-cm3.lib" \
-"../lm3s8962.cmd" \
+-l"libc.a" \
+"../lm3s2110.cmd" \
 
 -include ../makefile.init
 
@@ -121,7 +118,7 @@ all: ece3849d15_lab3_addresser_awharrison.out
 ece3849d15_lab3_addresser_awharrison.out: $(OBJS) $(CMD_SRCS) $(GEN_CMDS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: ARM Linker'
-	"C:/ti/ccsv5/tools/compiler/arm_5.0.4/bin/armcl" -mv7M3 --code_state=16 --abi=eabi -me -g --diag_warning=225 --display_error_number --diag_wrap=off -z --stack_size=2048 -m"ece3849d15_lab3_addresser_awharrison.map" --heap_size=0 -i"C:/ti/ccsv5/tools/compiler/arm_5.0.4/lib" -i"C:/ti/ccsv5/tools/compiler/arm_5.0.4/include" --reread_libs --warn_sections --display_error_number --diag_wrap=off --xml_link_info="ece3849d15_lab3_addresser_awharrison_linkInfo.xml" --rom_model -o "ece3849d15_lab3_addresser_awharrison.out" $(ORDERED_OBJS)
+	"C:/ti/ccsv5/tools/compiler/arm_5.0.4/bin/armcl" -mv7M3 --code_state=16 --abi=eabi -me -g --diag_warning=225 --display_error_number --diag_wrap=off -z --stack_size=512 -m"app_LM3S2110_ccs.map" --heap_size=0 -i"C:/ti/ccsv5/tools/compiler/arm_5.0.4/lib" -i"C:/ti/ccsv5/tools/compiler/arm_5.0.4/include" --reread_libs --warn_sections --display_error_number --diag_wrap=off --xml_link_info="ece3849d15_lab3_addresser_awharrison_linkInfo.xml" --rom_model -o "ece3849d15_lab3_addresser_awharrison.out" $(ORDERED_OBJS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -129,8 +126,8 @@ ece3849d15_lab3_addresser_awharrison.out: $(OBJS) $(CMD_SRCS) $(GEN_CMDS)
 clean:
 	-$(RM) $(TMS470_EXECUTABLE_OUTPUTS__QUOTED)$(GEN_SRCS__QUOTED)$(GEN_MISC_FILES__QUOTED)$(GEN_OPTS__QUOTED)$(GEN_CMDS__QUOTED) "ece3849d15_lab3_addresser_awharrison.out"
 	-$(RMDIR) $(GEN_MISC_DIRS__QUOTED)
-	-$(RM) "buttons.pp" "frame_graphics.pp" "kiss_fft.pp" "main.pp" "rit128x96x4.pp" "ustdlib.pp" 
-	-$(RM) "buttons.obj" "frame_graphics.obj" "kiss_fft.obj" "main.obj" "rit128x96x4.obj" "ustdlib.obj" 
+	-$(RM) "main.pp" "network.pp" "ustdlib.pp" 
+	-$(RM) "main.obj" "network.obj" "ustdlib.obj" 
 	-@echo 'Finished clean'
 	-@echo ' '
 
