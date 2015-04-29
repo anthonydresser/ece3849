@@ -21,11 +21,18 @@
 #include "driverlib/gpio.h"
 #include "driverlib/comp.h"
 
+unsigned volatile char g_periodInit = 1;
+unsigned volatile long g_accumulatedPeriod = 0;
+unsigned volatile int g_numPeriods = 0;
+unsigned volatile long g_periodDiff = 0;
+unsigned long g_SystemClock;
+unsigned volatile long g_frequency = 0;
 
 /*
  *  ======== main ========
  */
 Void main() {
+    g_SystemClock = SysCtlClockGet();
 	IntMasterDisable();
 
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_COMP0);
@@ -61,5 +68,27 @@ Void main() {
 void Timer0A_ISR() {
     static long previous  = 0;
     TIMER0_ICR_R = TIMER_ICR_CAECINT;
+    
+    if (g_periodInit) {
+        g_periodInit = 0;
+        previous = TIMER0_TAR_R;
+    } else {
+        long recent = TIMER0_TAR_R;
+        g_periodDiff = previous - recent;
+        g_accumulatedPeriod+= g_periodDiff;
+        g_numPeriods++;
+        previous = recent;
+    }
+}
+
+void Timer1A_ISR() {
+    TIMER1_ICR_R = TIMER_ICR_TATOCINT;
+    
+    float avgPeriod = (float)g_accumulatedPeriod/(float)g_numPeriods;
+    
+    g_frequency = ((1/avgPeriod) * g_SystemClock) * 1000;
+    
+    g_accumulatedPeriod = 0;
+    g_numPeriods = 0;
 }
 
