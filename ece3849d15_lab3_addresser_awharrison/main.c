@@ -26,6 +26,7 @@
  *  ======== main ========
  */
 Void main() {
+	IntMasterDisable();
 
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_COMP0);
 	ComparatorConfigure(COMP_BASE, 0, COMP_TRIG_NONE|COMP_INT_HIGH|COMP_ASRCP_REF);
@@ -50,8 +51,9 @@ Void main() {
 	TimerIntEnable(TIMER0_BASE, TIMER_CAPA_EVENT);
 	TimerEnable(TIMER0_BASE, TIMER_A);
     
-    IntPrioitySet(INT_TIMER0A, 0);
     IntEnable(INT_TIMER0A);
+
+    IntMasterEnable();
 
 	BIOS_start();     /* enable interrupts and start SYS/BIOS */
 }
