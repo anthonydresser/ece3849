@@ -45,11 +45,19 @@ Void main() {
 	GPIOPadConfigSet(GPIO_PORTB_BASE, GPIO_PIN_0, GPIO_STRENGTH_2MA, GPIO_PIN_TYPE_STD);
 	TimerDisable(TIMER0_BASE, TIMER_BOTH);
 	TimerConfigure(TIMER0_BASE, TIMER_CFG_SPLIT_PAIR | TIMER_CFG_A_CAP_TIME);
-	TimerControlEvent(TIMER0_BASE, TIMER_A, ?);
-	TimerLoadSet(TIMER0_BASE, TIMER_A, ?);
-	TimerIntEnable(TIMER0_BASE, ?);
+	TimerControlEvent(TIMER0_BASE, TIMER_A, TIMER_EVENT_POS_EDGE);
+	TimerLoadSet(TIMER0_BASE, TIMER_A, 0xffff);
+	TimerIntEnable(TIMER0_BASE, TIMER_CAPA_EVENT);
 	TimerEnable(TIMER0_BASE, TIMER_A);
+    
+    IntPrioitySet(INT_TIMER0A, 0);
+    IntEnable(INT_TIMER0A);
 
 	BIOS_start();     /* enable interrupts and start SYS/BIOS */
+}
+
+void Timer0A_ISR() {
+    static long previous  = 0;
+    TIMER0_ICR_R = TIMER_ICR_CAECINT;
 }
 
