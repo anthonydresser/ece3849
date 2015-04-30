@@ -51,7 +51,7 @@ Void main() {
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
 	GPIODirModeSet(GPIO_PORTD_BASE, GPIO_PIN_7, GPIO_DIR_MODE_HW); // C0o output
 	GPIOPadConfigSet(GPIO_PORTD_BASE, GPIO_PIN_7, GPIO_STRENGTH_2MA, GPIO_PIN_TYPE_STD);
-	// D7
+	// pin D7
 
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);
 	GPIODirModeSet(GPIO_PORTB_BASE, GPIO_PIN_0, GPIO_DIR_MODE_HW); // CCP0 input
@@ -62,7 +62,8 @@ Void main() {
 	TimerLoadSet(TIMER0_BASE, TIMER_A, 0xffff);
 	TimerIntEnable(TIMER0_BASE, TIMER_CAPA_EVENT);
 	TimerEnable(TIMER0_BASE, TIMER_A);
-	// B0
+	// pin B0
+	// IntEnable(INT_TIMER0A);
 
     IntMasterEnable();
 
@@ -71,7 +72,9 @@ Void main() {
 
 void Timer0A_ISR() {
     static long previous  = 0;
-    TIMER0_ICR_R |= TIMER_IMR_CAEIM;
+//    TIMER0_ICR_R = TIMER_IMR_CAEIM;
+//    TIMER0_ICR_R = TIMER_ICR_CAECINT;
+    TIMER0_ICR_R = TIMER_ICR_CAECINT | TIMER_IMR_CAEIM;
     
     if (g_periodInit) {
         g_periodInit = 0;
