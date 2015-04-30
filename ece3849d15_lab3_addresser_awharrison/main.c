@@ -16,6 +16,7 @@
 #include "inc/hw_memmap.h"
 #include "inc/hw_sysctl.h"
 #include "driverlib/sysctl.h"
+#include "driverlib/timer.h"
 #include "utils/ustdlib.h"
 #include "driverlib/interrupt.h"
 #include "driverlib/gpio.h"
@@ -31,9 +32,11 @@ unsigned volatile long g_frequency = 0;
 /*
  *  ======== main ========
  */
+
 Void main() {
-    g_SystemClock = SysCtlClockGet();
 	IntMasterDisable();
+
+    g_SystemClock = SysCtlClockGet();
 
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_COMP0);
 	ComparatorConfigure(COMP_BASE, 0, COMP_TRIG_NONE|COMP_INT_HIGH|COMP_ASRCP_REF);
@@ -43,10 +46,12 @@ Void main() {
 	GPIODirModeSet(GPIO_PORTB_BASE, GPIO_PIN_4, GPIO_DIR_MODE_HW); // C0- input
 	GPIOPadConfigSet(GPIO_PORTB_BASE, GPIO_PIN_4, GPIO_STRENGTH_2MA,
 	 GPIO_PIN_TYPE_ANALOG);
+	// pin B4
 
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
 	GPIODirModeSet(GPIO_PORTD_BASE, GPIO_PIN_7, GPIO_DIR_MODE_HW); // C0o output
 	GPIOPadConfigSet(GPIO_PORTD_BASE, GPIO_PIN_7, GPIO_STRENGTH_2MA, GPIO_PIN_TYPE_STD);
+	// D7
 
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);
 	GPIODirModeSet(GPIO_PORTB_BASE, GPIO_PIN_0, GPIO_DIR_MODE_HW); // CCP0 input
@@ -57,8 +62,7 @@ Void main() {
 	TimerLoadSet(TIMER0_BASE, TIMER_A, 0xffff);
 	TimerIntEnable(TIMER0_BASE, TIMER_CAPA_EVENT);
 	TimerEnable(TIMER0_BASE, TIMER_A);
-    
-    IntEnable(INT_TIMER0A);
+	// B0
 
     IntMasterEnable();
 
@@ -67,14 +71,14 @@ Void main() {
 
 void Timer0A_ISR() {
     static long previous  = 0;
-    TIMER0_ICR_R = TIMER_ICR_CAECINT;
+    TIMER0_ICR_R |= TIMER_IMR_CAEIM;
     
     if (g_periodInit) {
         g_periodInit = 0;
         previous = TIMER0_TAR_R;
     } else {
         long recent = TIMER0_TAR_R;
-        g_periodDiff = previous - recent;
+        g_periodDiff = (previous - recent) & 0xffff;
         g_accumulatedPeriod+= g_periodDiff;
         g_numPeriods++;
         previous = recent;
@@ -82,10 +86,14 @@ void Timer0A_ISR() {
 }
 
 void Timer1A_ISR() {
-    TIMER1_ICR_R = TIMER_ICR_TATOCINT;
+    IArg key;
+
+    key = GateHwi_enter(gateHwi0);
     
     float avgPeriod = (float)g_accumulatedPeriod/(float)g_numPeriods;
     
+    GateHwi_leave(gateHwi0, key);
+
     g_frequency = ((1/avgPeriod) * g_SystemClock) * 1000;
     
     g_accumulatedPeriod = 0;

@@ -7,6 +7,15 @@
 
 #include <xdc/std.h>
 
+#include <ti/sysbios/hal/Hwi.h>
+extern const ti_sysbios_hal_Hwi_Handle hwi0;
+
+#include <ti/sysbios/knl/Clock.h>
+extern const ti_sysbios_knl_Clock_Handle clock0;
+
+#include <ti/sysbios/gates/GateHwi.h>
+extern const ti_sysbios_gates_GateHwi_Handle gateHwi0;
+
 extern int xdc_runtime_Startup__EXECFXN__C;
 
 extern int xdc_runtime_Startup__RESETFXN__C;
