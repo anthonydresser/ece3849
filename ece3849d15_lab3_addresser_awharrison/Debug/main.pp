@@ -156,6 +156,7 @@ main.obj: C:/ti/xdctools_3_25_00_48/packages/xdc/runtime/Types.h
 main.obj: C:/ti/xdctools_3_25_00_48/packages/xdc/runtime/IInstance.h
 main.obj: C:/ti/bios_6_35_01_29/packages/ti/sysbios/gates/package/package.defs.h
 main.obj: C:/ti/xdctools_3_25_00_48/packages/xdc/runtime/IGateProvider.h
+main.obj: C:/ti/bios_6_35_01_29/packages/ti/sysbios/hal/Hwi.h
 main.obj: C:/ti/bios_6_35_01_29/packages/ti/sysbios/knl/Task.h
 main.obj: C:/ti/xdctools_3_25_00_48/packages/xdc/runtime/Types.h
 main.obj: C:/ti/xdctools_3_25_00_48/packages/xdc/runtime/IInstance.h
@@ -369,6 +370,7 @@ C:/ti/xdctools_3_25_00_48/packages/xdc/runtime/Types.h:
 C:/ti/xdctools_3_25_00_48/packages/xdc/runtime/IInstance.h: 
 C:/ti/bios_6_35_01_29/packages/ti/sysbios/gates/package/package.defs.h: 
 C:/ti/xdctools_3_25_00_48/packages/xdc/runtime/IGateProvider.h: 
+C:/ti/bios_6_35_01_29/packages/ti/sysbios/hal/Hwi.h: 
 C:/ti/bios_6_35_01_29/packages/ti/sysbios/knl/Task.h: 
 C:/ti/xdctools_3_25_00_48/packages/xdc/runtime/Types.h: 
 C:/ti/xdctools_3_25_00_48/packages/xdc/runtime/IInstance.h: 

@@ -64,6 +64,7 @@ Void main() {
 	TimerEnable(TIMER0_BASE, TIMER_A);
 	// pin B0
 	// IntEnable(INT_TIMER0A);
+	NetworkInit();
 
     IntMasterEnable();
 
@@ -74,7 +75,7 @@ void Timer0A_ISR() {
     static long previous  = 0;
 //    TIMER0_ICR_R = TIMER_IMR_CAEIM;
 //    TIMER0_ICR_R = TIMER_ICR_CAECINT;
-    TIMER0_ICR_R = TIMER_ICR_CAECINT | TIMER_IMR_CAEIM;
+    TIMER0_ICR_R = TIMER_ICR_CAECINT;
     
     if (g_periodInit) {
         g_periodInit = 0;
@@ -92,14 +93,16 @@ void Timer1A_ISR() {
     IArg key;
 
     key = GateHwi_enter(gateHwi0);
-    
-    float avgPeriod = (float)g_accumulatedPeriod/(float)g_numPeriods;
-    
+    unsigned long accumPeriod = g_accumulatedPeriod;
+    unsigned long numPeriod = g_numPeriods;
+    g_accumulatedPeriod = 0;
+    g_numPeriods = 0;
     GateHwi_leave(gateHwi0, key);
+    
+    float avgPeriod = (float)accumPeriod/(float)numPeriod;
 
     g_frequency = ((1/avgPeriod) * g_SystemClock) * 1000;
     
-    g_accumulatedPeriod = 0;
-    g_numPeriods = 0;
+    NetworkTx(g_frequency);
 }
 
